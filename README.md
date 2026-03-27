@@ -50,6 +50,13 @@ Bạn cần một API key **miễn phí** từ Google để sử dụng plugin.
 
 ---
 
+## 🎥 Video Demo Giao Diện
+
+Bạn có thể xem trước giao diện và các thao tác cơ bản của plugin thông qua video demo ngắn dưới đây:
+*(Bạn có thể chèn link video demo vào đây)*
+
+---
+
 ## 🚀 Hướng dẫn sử dụng
 
 ### Bước 1: Mở plugin
