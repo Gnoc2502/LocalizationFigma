@@ -77,6 +77,8 @@ sequenceDiagram
 ### Bước 1: Mở plugin
 - Click phải vào canvas → **Plugins** → **Development** → **Localization Tool**
 
+![Mở plugin](https://placehold.co/600x400?text=Mo+Plugin)
+
 ### Bước 2: Cài đặt lần đầu
 - Dán **API key** từ Google AI Studio vào ô 🔑
 - Nhấn **🔄 Tải model** để tải danh sách model Gemini có sẵn
@@ -89,11 +91,15 @@ sequenceDiagram
 4. Đợi vài giây — plugin sẽ tự động hoàn thành các bước còn lại.
 5. ✅ Frame mới xuất hiện bên dưới frame gốc với nội dung đã dịch!
 
+![Chọn ngôn ngữ và dịch](https://placehold.co/600x400?text=Chon+Ngon+Ngu+Va+Dich)
+
 ### Ví dụ kết quả:
 ```
 Frame gốc:     "Home Screen"
 Frame đã dịch: "Home Screen (Tiếng Việt)"
 ```
+
+![Kết quả dịch](https://placehold.co/600x400?text=Ket+Qua+Dich)
 
 ---
 
