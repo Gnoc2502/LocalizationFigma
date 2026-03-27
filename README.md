@@ -52,6 +52,28 @@ Bạn cần một API key **miễn phí** từ Google để sử dụng plugin.
 
 ## 🚀 Hướng dẫn sử dụng
 
+### Quy trình hoạt động (Workflow)
+Dưới đây là sơ đồ trực quan hóa quá trình plugin hoạt động:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Plugin UI
+    participant Figma
+    participant Gemini AI
+
+    User->>Figma: Chọn Frame cần dịch
+    User->>Plugin UI: Mở plugin, chọn ngôn ngữ & bấm "Dịch ngay"
+    Plugin UI->>Figma: Yêu cầu trích xuất text
+    Figma-->>Plugin UI: Trả về danh sách text trong Frame
+    Plugin UI->>Gemini AI: Gửi Prompt + Text List + API Key
+    Gemini AI-->>Plugin UI: Trả về JSON (Text gốc: Text dịch)
+    Plugin UI->>Figma: Yêu cầu tạo bản sao & áp dụng bản dịch
+    Figma-->>Figma: Clone Frame gốc
+    Figma-->>Figma: Thay thế text cũ bằng text mới từ JSON
+    Figma-->>User: ✅ Hiển thị Frame mới đã dịch
+```
+
 ### Bước 1: Mở plugin
 - Click phải vào canvas → **Plugins** → **Development** → **Localization Tool**
 
@@ -64,10 +86,7 @@ Bạn cần một API key **miễn phí** từ Google để sử dụng plugin.
 1. **Chọn 1 Frame** trên canvas Figma (màn hình muốn dịch)
 2. **Chọn ngôn ngữ đích** từ dropdown (hoặc nhập mã ISO tuỳ ý)
 3. Nhấn **🚀 Dịch ngay**
-4. Đợi vài giây — plugin sẽ:
-   - Trích xuất toàn bộ text từ frame đã chọn
-   - Gửi cho Gemini AI để dịch
-   - Clone frame gốc và gắn text đã dịch vào bản sao
+4. Đợi vài giây — plugin sẽ tự động hoàn thành các bước còn lại.
 5. ✅ Frame mới xuất hiện bên dưới frame gốc với nội dung đã dịch!
 
 ### Ví dụ kết quả:
@@ -75,6 +94,27 @@ Bạn cần một API key **miễn phí** từ Google để sử dụng plugin.
 Frame gốc:     "Home Screen"
 Frame đã dịch: "Home Screen (Tiếng Việt)"
 ```
+
+---
+
+## 🧪 Hướng dẫn kiểm thử (Testing)
+
+Dự án này sử dụng **Jest** để viết Unit Test cho các hàm tiện ích (`utils.ts`).
+Các bài kiểm thử đảm bảo logic xử lý văn bản như hàm `normalize` chạy đúng để việc tìm kiếm và thay thế text chính xác hơn.
+
+### Cài đặt môi trường kiểm thử
+Đảm bảo bạn đã cài đặt đủ các dependency:
+```bash
+npm install
+```
+
+### Chạy các bài test
+Để chạy tất cả các bài test trong dự án:
+```bash
+npm run test
+```
+
+Kết quả sẽ hiển thị chi tiết các test case đã pass.
 
 ---
 

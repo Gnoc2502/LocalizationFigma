@@ -1,3 +1,5 @@
+import { normalize } from './src/utils';
+
 figma.showUI(__html__, { width: 320, height: 520 });
 
 // ===== LOAD SETTINGS KHI MỞ PLUGIN =====
@@ -44,9 +46,6 @@ figma.ui.onmessage = async (msg) => {
     // Đặt tên theo ngôn ngữ thực tế
     const langLabel = msg.langName || msg.langCode || 'Translated';
     clonedFrame.name = originalFrame.name + ` (${langLabel})`;
-
-    // Hàm normalize text để so sánh chính xác hơn
-    const normalize = (s: string) => s.replace(/\s+/g, ' ').trim();
 
     // Tạo bản dict đã normalize key để matching dễ hơn
     const normalizedDict: Record<string, string> = {};
