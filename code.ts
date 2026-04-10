@@ -1,4 +1,4 @@
-figma.showUI(__html__, { width: 320, height: 520 });
+figma.showUI(__html__, { width: 320, height: 580, themeColors: true });
 
 // ===== LOAD SETTINGS KHI MỞ PLUGIN =====
 (async () => {
@@ -8,6 +8,27 @@ figma.showUI(__html__, { width: 320, height: 520 });
   figma.ui.postMessage({ type: 'LOAD_SETTINGS', apiKey, model, prompt });
 })();
 
+// ===== BATCH FONT LOADING =====
+async function batchLoadFonts(textNodes: TextNode[]): Promise<void> {
+  const fontsToLoad = new Set<string>();
+  for (const node of textNodes) {
+    if (node.fontName === figma.mixed) {
+      const len = node.characters.length;
+      for (let i = 0; i < len; i++) {
+        fontsToLoad.add(JSON.stringify(node.getRangeFontName(i, i + 1)));
+      }
+    } else {
+      fontsToLoad.add(JSON.stringify(node.fontName));
+    }
+  }
+  await Promise.all(
+    Array.from(fontsToLoad).map(f =>
+      figma.loadFontAsync(JSON.parse(f) as FontName)
+    )
+  );
+}
+
+// ===== MESSAGE HANDLER =====
 figma.ui.onmessage = async (msg) => {
   // ===== LƯU SETTINGS =====
   if (msg.type === 'SAVE_SETTINGS') {
@@ -17,6 +38,21 @@ figma.ui.onmessage = async (msg) => {
     return;
   }
 
+  // ===== CLICK TO NAVIGATE =====
+  if (msg.type === 'SELECT_NODE') {
+    const node = await figma.getNodeByIdAsync(msg.nodeId);
+    if (node && 'type' in node) {
+      const sceneNode = node as SceneNode;
+      figma.currentPage.selection = [sceneNode];
+      figma.viewport.scrollAndZoomIntoView([sceneNode]);
+      figma.notify(`📍 Đã chọn: ${sceneNode.name}`);
+    } else {
+      figma.notify('⚠️ Không tìm thấy node', { error: true });
+    }
+    return;
+  }
+
+  // ===== TRÍCH XUẤT TEXT =====
   if (msg.type === 'EXTRACT_TEXT') {
     const selection = figma.currentPage.selection;
     if (selection.length === 0) {
@@ -32,65 +68,53 @@ figma.ui.onmessage = async (msg) => {
       .map((node: TextNode) => node.characters.trim())
       .filter((t: string) => t.length > 0);
 
-    // Truyền langCode + langName từ UI xuống
-    figma.ui.postMessage({ type: 'START_TRANSLATE', texts: textsToTranslate, langCode: msg.langCode, langName: msg.langName });
+    figma.ui.postMessage({
+      type: 'START_TRANSLATE',
+      texts: textsToTranslate,
+      langCode: msg.langCode,
+      langName: msg.langName
+    });
   }
 
+  // ===== APPLY TRANSLATION (text đã kiểm tra xong từ UI) =====
   if (msg.type === 'APPLY_TRANSLATION') {
     const originalFrame = figma.currentPage.selection[0] as FrameNode;
     const clonedFrame = originalFrame.clone();
     clonedFrame.y = originalFrame.y + originalFrame.height + 100;
 
-    // Đặt tên theo ngôn ngữ thực tế
     const langLabel = msg.langName || msg.langCode || 'Translated';
     clonedFrame.name = originalFrame.name + ` (${langLabel})`;
 
-    // Hàm normalize text để so sánh chính xác hơn
     const normalize = (s: string) => s.replace(/\s+/g, ' ').trim();
 
-    // Tạo bản dict đã normalize key để matching dễ hơn
     const normalizedDict: Record<string, string> = {};
     for (const key in msg.translatedDict) {
       normalizedDict[normalize(key)] = msg.translatedDict[key];
     }
-    console.log('📖 Dict sau khi normalize:', JSON.stringify(normalizedDict));
+
+    const clonedTextNodes = clonedFrame.findAllWithCriteria({ types: ['TEXT'] });
+    await batchLoadFonts(clonedTextNodes);
 
     let translatedCount = 0;
     let skippedCount = 0;
-
-    // Quét text trên bản sao
-    const clonedTextNodes = clonedFrame.findAllWithCriteria({ types: ['TEXT'] });
 
     for (const node of clonedTextNodes) {
       const originalText = normalize(node.characters);
       const translated = normalizedDict[originalText];
 
-      if (translated) {
-        if (node.fontName !== figma.mixed) {
-          await figma.loadFontAsync(node.fontName as FontName);
-          node.characters = translated;
-          translatedCount++;
-        } else {
-          // Mixed font: load từng ký tự font rồi replace
-          const len = node.characters.length;
-          for (let i = 0; i < len; i++) {
-            const font = node.getRangeFontName(i, i + 1) as FontName;
-            await figma.loadFontAsync(font);
-          }
-          node.characters = translated;
-          translatedCount++;
-        }
-      } else {
-        console.log('⏭️ Không tìm thấy bản dịch cho:', originalText);
+      if (!translated) {
         skippedCount++;
+        continue;
       }
+
+      node.characters = translated;
+      translatedCount++;
     }
 
     figma.currentPage.selection = [clonedFrame];
     figma.viewport.scrollAndZoomIntoView([clonedFrame]);
-    figma.notify(`🎉 Dịch xong! ${translatedCount} text đã dịch, ${skippedCount} text bỏ qua.`);
 
-    // Gửi message về UI báo hoàn tất
+    figma.notify(`🎉 Dịch xong! ${translatedCount} text, ${skippedCount} bỏ qua.`);
     figma.ui.postMessage({
       type: 'TRANSLATION_DONE',
       translatedCount,

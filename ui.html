@@ -1,44 +1,69 @@
-<div style="padding: 16px; font-family: 'Segoe UI', sans-serif; text-align: center;">
-  <h3 style="margin-top: 0; margin-bottom: 14px; color: #333;">🤖 Dịch UI bằng Gemini</h3>
+<style>
+  :root {
+    --bg: var(--figma-color-bg, #fff);
+    --bg2: var(--figma-color-bg-secondary, #f5f5f5);
+    --text: var(--figma-color-text, #333);
+    --text2: var(--figma-color-text-secondary, #666);
+    --text3: var(--figma-color-text-tertiary, #999);
+    --border: var(--figma-color-border, #ddd);
+    --brand: var(--figma-color-bg-brand, #0D99FF);
+    --brand-text: var(--figma-color-text-onbrand, #fff);
+    --success-text: #2E7D32;
+    --warning-text: #F57F17;
+    --danger-text: #E53935;
+    --info-bg: rgba(13,153,255,0.08);
+    --info-border: rgba(13,153,255,0.25);
+    --warning-bg: rgba(255,193,7,0.12);
+    --warning-border: rgba(255,193,7,0.35);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); }
+  input, select, textarea, button {
+    background: var(--bg); color: var(--text);
+    border: 1.5px solid var(--border); border-radius: 6px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+  input::placeholder, textarea::placeholder { color: var(--text3); }
+  select option { background: var(--bg); color: var(--text); }
+  .label { font-size: 11px; font-weight: 600; color: var(--text2); }
+  .hint { font-size: 10px; margin: 3px 0 0 2px; color: var(--text3); min-height: 14px; }
+  .small-btn {
+    font-size: 10px; padding: 2px 8px; border: 1px solid var(--border);
+    border-radius: 4px; background: var(--bg2); cursor: pointer; color: var(--text2);
+  }
+</style>
+
+<div style="padding: 16px; font-family: 'Segoe UI', system-ui, sans-serif; text-align: center;">
+  <h3 style="margin-top: 0; margin-bottom: 14px; color: var(--text);">🤖 Dịch UI bằng Gemini</h3>
 
   <!-- API KEY -->
   <div style="margin-bottom: 10px; text-align: left;">
-    <label style="font-size: 11px; font-weight: 600; color: #555;">🔑 API Key (Google AI Studio):</label>
+    <label class="label">🔑 API Key (Google AI Studio):</label>
     <div style="display: flex; gap: 6px; margin-top: 4px;">
       <input id="apiKeyInput" type="password" placeholder="Dán API Key vào đây..."
-        style="flex: 1; padding: 7px 10px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 12px;" />
-      <button id="toggleKeyBtn" title="Hiện/ẩn key"
-        style="padding: 6px 10px; border: 1.5px solid #ddd; border-radius: 6px; background: white; cursor: pointer; font-size: 13px;">
-        👁️
-      </button>
+        style="flex: 1; padding: 7px 10px; font-size: 12px;" />
+      <button id="toggleKeyBtn" title="Hiện/ẩn key" style="padding: 6px 10px; cursor: pointer; font-size: 13px;">👁️</button>
     </div>
-    <p id="apiKeyHint" style="font-size: 10px; margin: 3px 0 0 2px; color: #999; min-height: 14px;">Lấy key tại
-      <b>aistudio.google.com</b>
-    </p>
+    <p id="apiKeyHint" class="hint">Lấy key tại <b>aistudio.google.com</b></p>
   </div>
 
   <!-- CHỌN MODEL -->
   <div style="margin-bottom: 10px; text-align: left;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <label style="font-size: 11px; font-weight: 600; color: #555;">⚡ Model:</label>
-      <button id="refreshModelsBtn" title="Tải lại danh sách model từ Google"
-        style="font-size: 10px; padding: 2px 8px; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; cursor: pointer; color: #666;">🔄
-        Tải model</button>
+      <label class="label">⚡ Model:</label>
+      <button id="refreshModelsBtn" title="Tải lại danh sách model từ Google" class="small-btn">🔄 Tải model</button>
     </div>
-    <select id="modelSelect"
-      style="width: 100%; margin-top: 4px; padding: 7px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 12px; background: white; cursor: pointer;">
+    <select id="modelSelect" style="width: 100%; margin-top: 4px; padding: 7px; font-size: 12px; cursor: pointer;">
       <option value="gemini-2.5-flash" selected>⚡ gemini-2.5-flash (mặc định)</option>
     </select>
-    <p id="modelHint" style="font-size: 10px; margin: 3px 0 0 2px; color: #999; min-height: 14px;">Nhập API Key rồi
-      bấm 🔄 để tải danh sách model</p>
+    <p id="modelHint" class="hint">Nhập API Key rồi bấm 🔄 để tải danh sách model</p>
   </div>
 
   <!-- CHỌN NGÔN NGỮ -->
   <div style="margin-bottom: 10px; text-align: left;">
-    <label style="font-size: 11px; font-weight: 600; color: #555;">🌐 Ngôn ngữ đích:</label>
+    <label class="label">🌐 Ngôn ngữ đích:</label>
     <div style="display: flex; gap: 6px; margin-top: 4px;">
-      <select id="langSelect"
-        style="flex: 1; padding: 7px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 12px; background: white; cursor: pointer;">
+      <select id="langSelect" style="flex: 1; padding: 7px; font-size: 12px; cursor: pointer;">
         <option value="vi">🇻🇳 Tiếng Việt (vi)</option>
         <option value="ja">🇯🇵 Tiếng Nhật (ja)</option>
         <option value="ko">🇰🇷 Tiếng Hàn (ko)</option>
@@ -55,41 +80,34 @@
         <option value="custom">✏️ Nhập mã khác...</option>
       </select>
       <input id="customLang" type="text" placeholder="vd: pl, tr" maxlength="7" tabindex="0"
-        style="width: 90px; padding: 7px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 12px; display: none;" />
+        style="width: 90px; padding: 7px; font-size: 12px; display: none;" />
     </div>
-    <p id="langHint" style="font-size: 10px; margin: 3px 0 0 2px; color: #999; min-height: 14px;">Chọn từ danh sách
-      hoặc nhập mã ISO (2-3 chữ cái, vd: pl, tr, uk)</p>
+    <p id="langHint" class="hint">Chọn từ danh sách hoặc nhập mã ISO (2-3 chữ cái, vd: pl, tr, uk)</p>
   </div>
 
   <!-- PROMPT TEMPLATE -->
   <div style="margin-bottom: 10px; text-align: left;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <label style="font-size: 11px; font-weight: 600; color: #555;">📝 Prompt (tuỳ chỉnh):</label>
+      <label class="label">📝 Prompt (tuỳ chỉnh):</label>
       <div style="display: flex; gap: 4px;">
         <button id="resetPromptBtn" title="Khôi phục prompt mặc định"
-          style="font-size: 10px; padding: 2px 8px; border: 1px solid #ddd; border-radius: 4px; background: #fff3e0; cursor: pointer; color: #E65100; display: none;">🔄
-          Mặc định</button>
-        <button id="togglePromptBtn"
-          style="font-size: 10px; padding: 2px 8px; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; cursor: pointer; color: #666;">Hiện/Ẩn</button>
+          style="font-size: 10px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--warning-bg); cursor: pointer; color: var(--warning-text); display: none;">🔄 Mặc định</button>
+        <button id="togglePromptBtn" class="small-btn">Hiện/Ẩn</button>
       </div>
     </div>
 
-    <!-- Hướng dẫn sử dụng -->
     <div id="promptGuide"
-      style="display: none; margin-top: 6px; padding: 8px; background: #f0f7ff; border: 1px solid #c2e0ff; border-radius: 6px; font-size: 10px; color: #444;">
-      <p style="margin: 0 0 6px 0; font-weight: 600; color: #1565C0;">💡 Prompt hoạt động thế nào?</p>
-      <p style="margin: 0 0 4px 0;">Plugin trích text từ Figma → gửi kèm prompt cho AI → AI trả JSON đã dịch → plugin
-        gắn lại vào Figma.</p>
+      style="display: none; margin-top: 6px; padding: 8px; background: var(--info-bg); border: 1px solid var(--info-border); border-radius: 6px; font-size: 10px; color: var(--text);">
+      <p style="margin: 0 0 6px 0; font-weight: 600; color: var(--brand);">💡 Prompt hoạt động thế nào?</p>
+      <p style="margin: 0 0 4px 0;">Plugin trích text từ Figma → gửi kèm prompt cho AI → AI trả JSON đã dịch → plugin gắn lại vào Figma.</p>
 
-      <p style="margin: 6px 0 2px 0; font-weight: 600; color: #E65100;">📥 Đầu vào (AI nhận được):</p>
-      <div
-        style="background: #fff3e0; padding: 5px 8px; border-radius: 4px; font-family: monospace; font-size: 9px; margin-bottom: 4px; white-space: pre-wrap; line-height: 1.5;">
+      <p style="margin: 6px 0 2px 0; font-weight: 600; color: var(--warning-text);">📥 Đầu vào (AI nhận được):</p>
+      <div style="background: var(--bg2); padding: 5px 8px; border-radius: 4px; font-family: monospace; font-size: 9px; margin-bottom: 4px; white-space: pre-wrap; line-height: 1.5;">
         ...Dịch sang <b>Tiếng Việt</b> (mã: <b>vi</b>)...
         Danh sách: <b>["Settings", "Delete", "Save changes"]</b></div>
 
-      <p style="margin: 4px 0 2px 0; font-weight: 600; color: #2E7D32;">📤 Đầu ra (AI phải trả về):</p>
-      <div
-        style="background: #e8f5e9; padding: 5px 8px; border-radius: 4px; font-family: monospace; font-size: 9px; margin-bottom: 6px; white-space: pre-wrap; line-height: 1.5;">
+      <p style="margin: 4px 0 2px 0; font-weight: 600; color: var(--success-text);">📤 Đầu ra (AI phải trả về):</p>
+      <div style="background: var(--bg2); padding: 5px 8px; border-radius: 4px; font-family: monospace; font-size: 9px; margin-bottom: 6px; white-space: pre-wrap; line-height: 1.5;">
         {
         "Settings": "Cài đặt",
         "Delete": "Xoá",
@@ -98,18 +116,17 @@
 
       <p style="margin: 0 0 2px 0; font-weight: 600;">📌 3 biến tự động thay thế:</p>
       <table style="width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 6px;">
-        <tr style="background: #e3f2fd;">
-          <td style="padding: 3px 6px; border: 1px solid #c2e0ff; font-weight: 600; font-family: monospace;">
-            {{TEXT_LIST}}</td>
-          <td style="padding: 3px 6px; border: 1px solid #c2e0ff;">Danh sách text trích từ Figma <b>(bắt buộc)</b></td>
+        <tr style="background: var(--bg2);">
+          <td style="padding: 3px 6px; border: 1px solid var(--border); font-weight: 600; font-family: monospace;">{{TEXT_LIST}}</td>
+          <td style="padding: 3px 6px; border: 1px solid var(--border);">Danh sách text trích từ Figma <b>(bắt buộc)</b></td>
         </tr>
         <tr>
-          <td style="padding: 3px 6px; border: 1px solid #c2e0ff; font-family: monospace;">{{LANG_NAME}}</td>
-          <td style="padding: 3px 6px; border: 1px solid #c2e0ff;">Tên ngôn ngữ (vd: Tiếng Việt, Tiếng Nhật)</td>
+          <td style="padding: 3px 6px; border: 1px solid var(--border); font-family: monospace;">{{LANG_NAME}}</td>
+          <td style="padding: 3px 6px; border: 1px solid var(--border);">Tên ngôn ngữ (vd: Tiếng Việt, Tiếng Nhật)</td>
         </tr>
-        <tr style="background: #e3f2fd;">
-          <td style="padding: 3px 6px; border: 1px solid #c2e0ff; font-family: monospace;">{{LANG_CODE}}</td>
-          <td style="padding: 3px 6px; border: 1px solid #c2e0ff;">Mã ISO ngôn ngữ (vd: vi, ja, ko)</td>
+        <tr style="background: var(--bg2);">
+          <td style="padding: 3px 6px; border: 1px solid var(--border); font-family: monospace;">{{LANG_CODE}}</td>
+          <td style="padding: 3px 6px; border: 1px solid var(--border);">Mã ISO ngôn ngữ (vd: vi, ja, ko)</td>
         </tr>
       </table>
 
@@ -123,24 +140,37 @@
     </div>
 
     <textarea id="promptInput" rows="6"
-      style="width: 100%; margin-top: 4px; padding: 7px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 11px; font-family: 'Segoe UI', sans-serif; resize: vertical; display: none; box-sizing: border-box;">Bạn là chuyên gia dịch thuật UI/UX với 10 năm kinh nghiệm. Hãy dịch danh sách text UI dưới đây sang {{LANG_NAME}} (mã: {{LANG_CODE}}).
+      style="width: 100%; margin-top: 4px; padding: 7px; font-size: 11px; resize: vertical; display: none;">Bạn là chuyên gia dịch thuật UI/UX với 10 năm kinh nghiệm. Hãy dịch danh sách text UI dưới đây sang {{LANG_NAME}} (mã: {{LANG_CODE}}).
 
-YÊU CẦU:
-- Dịch ngắn gọn, tự nhiên, phù hợp giao diện điện thoại
-- Giữ nguyên tên riêng, brand name, emoji
-- Nếu là thuật ngữ kỹ thuật phổ biến thì giữ tiếng Anh
+QUY TẮC BẮT BUỘC:
+1. Mỗi bản dịch PHẢI có độ dài tương đương hoặc ngắn hơn text gốc. KHÔNG ĐƯỢC dài hơn 30% so với text gốc.
+2. Nếu bản dịch tự nhiên quá dài → dùng từ ngắn hơn, viết tắt hoặc lược bỏ từ phụ, nhưng vẫn giữ đúng nghĩa.
+3. Dịch tự nhiên, phù hợp giao diện điện thoại.
+4. Giữ nguyên tên riêng, brand name, emoji, số.
+5. Thuật ngữ kỹ thuật phổ biến → giữ tiếng Anh.
 
 ĐẦU VÀO: {{TEXT_LIST}}
 
-ĐẦU RA: Trả về JSON object, key là text gốc tiếng Anh, value là bản dịch {{LANG_NAME}}.
+ĐẦU RA: JSON object, key = text gốc, value = bản dịch {{LANG_NAME}}.
 Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}</textarea>
   </div>
 
+  <!-- LAYOUT PROTECTION -->
+  <div style="margin-bottom: 10px; text-align: left;">
+    <label style="display: flex; gap: 6px; align-items: center; font-size: 11px; cursor: pointer; padding: 6px 8px; background: var(--info-bg); border: 1px solid var(--info-border); border-radius: 6px;">
+      <input type="checkbox" id="layoutProtect" checked
+        style="accent-color: var(--brand); width: 14px; height: 14px; cursor: pointer; border: none;">
+      <span style="color: var(--brand); font-weight: 500;">🛡️ Bảo vệ layout (cảnh báo khi text nhảy dòng)</span>
+    </label>
+    <p class="hint">Phát hiện text dịch bị nhiều dòng hơn gốc, đề xuất dịch ngắn hơn</p>
+  </div>
+
   <button id="translateBtn"
-    style="width: 100%; padding: 11px; background: #0D99FF; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px;">
+    style="width: 100%; padding: 11px; background: var(--brand); color: var(--brand-text); border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px;">
     🚀 Dịch ngay
   </button>
   <p id="status" style="margin-top: 12px; font-size: 11px; font-weight: 500;"></p>
+
 </div>
 
 <script>
@@ -174,7 +204,7 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}</textarea>
 
       if (data.error) {
         hintEl.innerText = '❌ ' + (data.error.message || 'Không tải được model');
-        hintEl.style.color = '#E53935';
+        hintEl.style.color = 'var(--danger-text)';
         return;
       }
 
@@ -243,11 +273,11 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}</textarea>
 
       _modelsFetched = true;
       hintEl.innerText = `✅ Đã tải ${textModels.length} model`;
-      hintEl.style.color = '#4CAF50';
+      hintEl.style.color = 'var(--success-text)';
 
     } catch (err) {
       hintEl.innerText = '❌ Lỗi tải model: ' + err.message;
-      hintEl.style.color = '#E53935';
+      hintEl.style.color = 'var(--danger-text)';
     } finally {
       refreshBtn.disabled = false;
       refreshBtn.innerText = '🔄 Tải model';
@@ -309,7 +339,7 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}</textarea>
     const apiKey = getApiKey();
     if (!apiKey) {
       document.getElementById('modelHint').innerText = '❌ Nhập API Key trước';
-      document.getElementById('modelHint').style.color = '#E53935';
+      document.getElementById('modelHint').style.color = 'var(--danger-text)';
       return;
     }
     _modelsFetched = false;
@@ -429,17 +459,19 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}`;
     if (msg.type === 'TRANSLATE_ERROR') {
       const statusEl = document.getElementById('status');
       statusEl.innerText = '❌ ' + (msg.error || 'Lỗi không xác định từ plugin');
-      statusEl.style.color = '#E53935';
+      statusEl.style.color = 'var(--danger-text)';
       setTranslating(false);
       return;
     }
 
-    // Plugin báo dịch xong + clone xong
+    // Plugin báo dịch xong
     if (msg.type === 'TRANSLATION_DONE') {
       const statusEl = document.getElementById('status');
       const langName = msg.langName || '';
+
       statusEl.innerText = `🎉 Hoàn tất! ${msg.translatedCount} text đã dịch sang ${langName}, ${msg.skippedCount} bỏ qua.`;
-      statusEl.style.color = '#4CAF50';
+      statusEl.style.color = 'var(--success-text)';
+
       setTranslating(false);
       return;
     }
@@ -454,7 +486,7 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}`;
       // Chỉ check rỗng — KHÔNG check format
       if (!apiKey) {
         statusEl.innerText = '❌ Chưa nhập API Key! Lấy tại aistudio.google.com';
-        statusEl.style.color = '#E53935';
+        statusEl.style.color = 'var(--danger-text)';
         return;
       }
 
@@ -464,10 +496,24 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}`;
 
       // Lấy prompt template từ textarea và thay biến
       const promptTemplate = document.getElementById('promptInput').value;
+      const layoutProtect = document.getElementById('layoutProtect').checked;
+
+      // Nếu bật layout protect → gửi kèm maxLen cho mỗi text
+      let textListStr;
+      if (layoutProtect) {
+        const textsWithLimits = msg.texts.map(t => ({
+          text: t,
+          maxLen: Math.max(t.length + 3, Math.round(t.length * 1.3))
+        }));
+        textListStr = JSON.stringify(textsWithLimits);
+      } else {
+        textListStr = JSON.stringify(msg.texts);
+      }
+
       const prompt = promptTemplate
         .replace(/{{LANG_NAME}}/g, langName)
         .replace(/{{LANG_CODE}}/g, langCode)
-        .replace(/{{TEXT_LIST}}/g, JSON.stringify(msg.texts));
+        .replace(/{{TEXT_LIST}}/g, textListStr);
 
       try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
@@ -485,7 +531,7 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}`;
         if (!response.ok || data.error) {
           const errorMsg = handleApiError(response, data);
           statusEl.innerText = errorMsg;
-          statusEl.style.color = '#E53935';
+          statusEl.style.color = 'var(--danger-text)';
           setTranslating(false);
           return;
         }
@@ -496,7 +542,7 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}`;
           } else {
             statusEl.innerText = '❌ AI không trả về kết quả — thử lại hoặc đổi model';
           }
-          statusEl.style.color = '#E53935';
+          statusEl.style.color = 'var(--danger-text)';
           setTranslating(false);
           return;
         }
@@ -504,7 +550,7 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}`;
         const jsonString = data.candidates[0]?.content?.parts?.[0]?.text;
         if (!jsonString) {
           statusEl.innerText = '❌ AI trả về rỗng — thử lại';
-          statusEl.style.color = '#E53935';
+          statusEl.style.color = 'var(--danger-text)';
           setTranslating(false);
           return;
         }
@@ -514,21 +560,78 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}`;
           translatedDict = JSON.parse(jsonString);
         } catch (parseErr) {
           statusEl.innerText = '❌ AI trả về JSON không hợp lệ — thử lại hoặc đổi model';
-          statusEl.style.color = '#E53935';
+          statusEl.style.color = 'var(--danger-text)';
           console.error('JSON parse error:', jsonString);
           setTranslating(false);
           return;
         }
 
-        statusEl.innerText = `✅ Dịch xong ${langName}! Đang gắn vào Figma...`;
-        statusEl.style.color = '#4CAF50';
+        // ============================================
+        // === KIỂM TRA ĐỘ DÀI TRƯỚC KHI GỬI FIGMA ===
+        // ============================================
+
+        if (layoutProtect) {
+          const MAX_RATIO = 1.3; // Không được dài hơn 30%
+
+          // Tìm text dài quá
+          const tooLong = [];
+          for (const [original, translated] of Object.entries(translatedDict)) {
+            if (typeof translated !== 'string') continue;
+            if (translated.length > original.length * MAX_RATIO && original.length > 3) {
+              tooLong.push({ original, translated, maxChars: original.length + 3 });
+            }
+          }
+
+          // Nếu có text dài → gọi AI dịch lại 1 lần với maxLen cụ thể
+          if (tooLong.length > 0) {
+            statusEl.innerText = `🔄 ${tooLong.length} text quá dài — đang dịch ngắn hơn...`;
+            statusEl.style.color = 'var(--warning-text)';
+
+            const fixPrompt = `Dịch lại các text UI sau sang ${langName}. QUAN TRỌNG: mỗi bản dịch PHẢI ngắn hơn hoặc bằng số ký tự tối đa được chỉ định.
+
+${tooLong.map((t, i) => `${i + 1}. "${t.original}" → tối đa ${t.maxChars} ký tự (dịch cũ "${t.translated}" dài ${t.translated.length} ký tự, QUÁ DÀI)`).join('\n')}
+
+Trả về JSON object, key = text gốc, value = bản dịch mới NGẮN HƠN.`;
+
+            try {
+              const fixResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: fixPrompt }] }],
+                  generationConfig: { responseMimeType: "application/json" }
+                })
+              });
+              const fixData = await fixResp.json();
+              const fixJson = fixData?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (fixJson) {
+                const fixDict = JSON.parse(fixJson);
+                let fixedCount = 0;
+                for (const key in fixDict) {
+                  if (translatedDict[key] && typeof fixDict[key] === 'string' && fixDict[key].length < translatedDict[key].length) {
+                    translatedDict[key] = fixDict[key];
+                    fixedCount++;
+                  }
+                }
+                statusEl.innerText = `✅ Đã rút ngắn ${fixedCount}/${tooLong.length} text. Đang gắn vào Figma...`;
+              }
+            } catch (e) {
+              // Lỗi → dùng bản dịch hiện tại
+            }
+          } else {
+            statusEl.innerText = `✅ Dịch xong ${langName}! Tất cả text vừa vặn. Đang gắn vào Figma...`;
+          }
+        } else {
+          statusEl.innerText = `✅ Dịch xong ${langName}! Đang gắn vào Figma...`;
+        }
+
+        statusEl.style.color = 'var(--success-text)';
         parent.postMessage({ pluginMessage: { type: 'APPLY_TRANSLATION', translatedDict, langCode, langName } }, '*');
 
-        // Safety timeout: nếu plugin không trả lời trong 20s thì reset nút
+        // Safety timeout
         setTimeout(() => {
           if (_isTranslating) {
             setTranslating(false);
-            // Không ghi đè status nếu đã có nội dung khác
           }
         }, 20000);
 
@@ -538,10 +641,15 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}`;
         } else {
           statusEl.innerText = '❌ Lỗi: ' + error.message;
         }
-        statusEl.style.color = '#E53935';
+        statusEl.style.color = 'var(--danger-text)';
         setTranslating(false);
       }
     }
+  };
+
+  // ===== CLICK TO NAVIGATE =====
+  window.selectNode = function(nodeId) {
+    parent.postMessage({ pluginMessage: { type: 'SELECT_NODE', nodeId } }, '*');
   };
 
   document.getElementById('translateBtn').onclick = () => {
