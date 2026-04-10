@@ -1,180 +1,391 @@
 <style>
-  :root {
-    --bg: var(--figma-color-bg, #fff);
-    --bg2: var(--figma-color-bg-secondary, #f5f5f5);
-    --text: var(--figma-color-text, #333);
-    --text2: var(--figma-color-text-secondary, #666);
-    --text3: var(--figma-color-text-tertiary, #999);
-    --border: var(--figma-color-border, #ddd);
-    --brand: var(--figma-color-bg-brand, #0D99FF);
-    --brand-text: var(--figma-color-text-onbrand, #fff);
-    --success-text: #2E7D32;
-    --warning-text: #F57F17;
-    --danger-text: #E53935;
-    --info-bg: rgba(13,153,255,0.08);
-    --info-border: rgba(13,153,255,0.25);
-    --warning-bg: rgba(255,193,7,0.12);
-    --warning-border: rgba(255,193,7,0.35);
-  }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); }
-  input, select, textarea, button {
-    background: var(--bg); color: var(--text);
-    border: 1.5px solid var(--border); border-radius: 6px;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-  }
-  input::placeholder, textarea::placeholder { color: var(--text3); }
-  select option { background: var(--bg); color: var(--text); }
-  .label { font-size: 11px; font-weight: 600; color: var(--text2); }
-  .hint { font-size: 10px; margin: 3px 0 0 2px; color: var(--text3); min-height: 14px; }
-  .small-btn {
-    font-size: 10px; padding: 2px 8px; border: 1px solid var(--border);
-    border-radius: 4px; background: var(--bg2); cursor: pointer; color: var(--text2);
-  }
+  body { margin: 0; font-family: 'Segoe UI', sans-serif; }
+  .tab-bar { display:flex; border-bottom:2px solid #eee; margin-bottom:0; }
+  .tab-btn { flex:1; padding:10px 0; border:none; background:none; cursor:pointer; font-size:12px; font-weight:600; color:#888; border-bottom:2px solid transparent; margin-bottom:-2px; }
+  .tab-btn.active { color:#0d99ff; border-bottom-color:#0d99ff; }
+  .tab-content { display:none; }
+  .tab-content.active { display:block; }
+  .mode-btn { flex:1; padding:6px; border:1px solid #ddd; border-radius:4px; background:#fff; cursor:pointer; font-size:12px; }
+  .mode-btn.active { background:#0d99ff; color:#fff; border-color:#0d99ff; }
+  .log-entry { font-size:10px; padding:3px 0; border-bottom:1px solid #f0f0f0; line-height:1.4; }
+  .log-entry .log-time { color:#999; margin-right:4px; }
+  .log-entry.log-success { color:#2E7D32; }
+  .log-entry.log-error { color:#E53935; }
+  .log-entry.log-warn { color:#E65100; }
+  .log-entry.log-info { color:#555; }
+  .log-group-header { font-size:10px; font-weight:600; padding:4px 0 2px; cursor:pointer; user-select:none; color:#333; }
+  .log-group-header:hover { color:#0d99ff; }
+  .log-group-body { padding-left:12px; }
+  .log-group-body.collapsed { display:none; }
+  .token-badge { display:inline-block; font-size:9px; padding:1px 5px; border-radius:3px; background:#e3f2fd; color:#1565C0; margin-left:4px; }
 </style>
 
-<div style="padding: 16px; font-family: 'Segoe UI', system-ui, sans-serif; text-align: center;">
-  <h3 style="margin-top: 0; margin-bottom: 14px; color: var(--text);">🤖 Dịch UI bằng Gemini</h3>
-
-  <!-- API KEY -->
-  <div style="margin-bottom: 10px; text-align: left;">
-    <label class="label">🔑 API Key (Google AI Studio):</label>
-    <div style="display: flex; gap: 6px; margin-top: 4px;">
-      <input id="apiKeyInput" type="password" placeholder="Dán API Key vào đây..."
-        style="flex: 1; padding: 7px 10px; font-size: 12px;" />
-      <button id="toggleKeyBtn" title="Hiện/ẩn key" style="padding: 6px 10px; cursor: pointer; font-size: 13px;">👁️</button>
-    </div>
-    <p id="apiKeyHint" class="hint">Lấy key tại <b>aistudio.google.com</b></p>
+<div style="padding:0; height:100vh; display:flex; flex-direction:column;">
+  <div style="padding:12px 16px 0; text-align:center;">
+    <h3 style="margin:0 0 8px; color:#333; font-size:15px;">🤖 Dịch UI bằng Gemini</h3>
   </div>
 
-  <!-- CHỌN MODEL -->
-  <div style="margin-bottom: 10px; text-align: left;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <label class="label">⚡ Model:</label>
-      <button id="refreshModelsBtn" title="Tải lại danh sách model từ Google" class="small-btn">🔄 Tải model</button>
-    </div>
-    <select id="modelSelect" style="width: 100%; margin-top: 4px; padding: 7px; font-size: 12px; cursor: pointer;">
-      <option value="gemini-2.5-flash" selected>⚡ gemini-2.5-flash (mặc định)</option>
-    </select>
-    <p id="modelHint" class="hint">Nhập API Key rồi bấm 🔄 để tải danh sách model</p>
+  <!-- Tab Bar -->
+  <div class="tab-bar" style="padding:0 16px;">
+    <button class="tab-btn active" onclick="switchTab('translate')">🚀 Translate</button>
+    <button class="tab-btn" onclick="switchTab('settings')">⚙️ Settings</button>
+    <button class="tab-btn" onclick="switchTab('log')">📋 Log</button>
   </div>
 
-  <!-- CHỌN NGÔN NGỮ -->
-  <div style="margin-bottom: 10px; text-align: left;">
-    <label class="label">🌐 Ngôn ngữ đích:</label>
-    <div style="display: flex; gap: 6px; margin-top: 4px;">
-      <select id="langSelect" style="flex: 1; padding: 7px; font-size: 12px; cursor: pointer;">
-        <option value="vi">🇻🇳 Tiếng Việt (vi)</option>
-        <option value="ja">🇯🇵 Tiếng Nhật (ja)</option>
-        <option value="ko">🇰🇷 Tiếng Hàn (ko)</option>
-        <option value="zh">🇨🇳 Tiếng Trung (zh)</option>
-        <option value="th">🇹🇭 Tiếng Thái (th)</option>
-        <option value="es">🇪🇸 Tiếng Tây Ban Nha (es)</option>
-        <option value="fr">🇫🇷 Tiếng Pháp (fr)</option>
-        <option value="de">🇩🇪 Tiếng Đức (de)</option>
-        <option value="pt">🇧🇷 Tiếng Bồ Đào Nha (pt)</option>
-        <option value="ru">🇷🇺 Tiếng Nga (ru)</option>
-        <option value="ar">🇸🇦 Tiếng Ả Rập (ar)</option>
-        <option value="hi">🇮🇳 Tiếng Hindi (hi)</option>
-        <option value="id">🇮🇩 Tiếng Indonesia (id)</option>
-        <option value="custom">✏️ Nhập mã khác...</option>
-      </select>
-      <input id="customLang" type="text" placeholder="vd: pl, tr" maxlength="7" tabindex="0"
-        style="width: 90px; padding: 7px; font-size: 12px; display: none;" />
-    </div>
-    <p id="langHint" class="hint">Chọn từ danh sách hoặc nhập mã ISO (2-3 chữ cái, vd: pl, tr, uk)</p>
-  </div>
+  <div style="flex:1; overflow-y:auto; padding:12px 16px;">
 
-  <!-- PROMPT TEMPLATE -->
-  <div style="margin-bottom: 10px; text-align: left;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <label class="label">📝 Prompt (tuỳ chỉnh):</label>
-      <div style="display: flex; gap: 4px;">
-        <button id="resetPromptBtn" title="Khôi phục prompt mặc định"
-          style="font-size: 10px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--warning-bg); cursor: pointer; color: var(--warning-text); display: none;">🔄 Mặc định</button>
-        <button id="togglePromptBtn" class="small-btn">Hiện/Ẩn</button>
+    <!-- ==================== TRANSLATE TAB ==================== -->
+    <div id="tab-translate" class="tab-content active">
+
+      <!-- Selection indicator -->
+      <div id="selectionInfo" style="margin-bottom:8px; padding:6px 10px; border-radius:6px; background:#f5f5f5; font-size:11px; text-align:left; color:#666;">
+        📌 Chưa chọn Frame/Section nào
+      </div>
+
+      <!-- Source Language -->
+      <div style="margin-bottom:10px; text-align:left;">
+        <label style="font-size:11px; font-weight:600; color:#555;">📖 Ngôn ngữ gốc:</label>
+        <select id="sourceLangSelect" style="width:100%; margin-top:4px; padding:7px; border:1.5px solid #ddd; border-radius:6px; font-size:12px; background:white; cursor:pointer;">
+          <option value="en" data-name="English">🇬🇧 English</option>
+          <option value="vi" data-name="Vietnamese">🇻🇳 Tiếng Việt</option>
+          <option value="ja" data-name="Japanese">🇯🇵 Tiếng Nhật</option>
+          <option value="ko" data-name="Korean">🇰🇷 Tiếng Hàn</option>
+          <option value="zh" data-name="Chinese">🇨🇳 Tiếng Trung</option>
+          <option value="th" data-name="Thai">🇹🇭 Tiếng Thái</option>
+          <option value="es" data-name="Spanish">🇪🇸 Tiếng Tây Ban Nha</option>
+          <option value="fr" data-name="French">🇫🇷 Tiếng Pháp</option>
+          <option value="de" data-name="German">🇩🇪 Tiếng Đức</option>
+          <option value="pt" data-name="Portuguese">🇧🇷 Tiếng Bồ Đào Nha</option>
+          <option value="ru" data-name="Russian">🇷🇺 Tiếng Nga</option>
+          <option value="custom-src" data-name="">✏️ Nhập mã khác...</option>
+        </select>
+        <input id="customSourceLang" type="text" placeholder="vd: pl, tr" maxlength="7"
+          style="width:100%; margin-top:4px; padding:7px; border:1.5px solid #ddd; border-radius:6px; font-size:12px; display:none;" />
+      </div>
+
+      <!-- Target Language Selection -->
+      <div style="margin-bottom:10px; text-align:left;">
+        <label style="font-size:11px; font-weight:600; color:#555;">🌐 Ngôn ngữ đích:</label>
+        <div style="display:flex; gap:4px; margin:6px 0;">
+          <button id="btnModeSingle" class="mode-btn active" onclick="setLangMode('single')">Single</button>
+          <button id="btnModeBatch" class="mode-btn" onclick="setLangMode('batch')">Batch</button>
+        </div>
+
+        <!-- Single mode -->
+        <div id="singleLangPanel">
+          <div style="display:flex; gap:6px;">
+            <select id="langSelect" style="flex:1; padding:7px; border:1.5px solid #ddd; border-radius:6px; font-size:12px; background:white; cursor:pointer;">
+              <option value="vi">🇻🇳 Tiếng Việt (vi)</option>
+              <option value="ja">🇯🇵 Tiếng Nhật (ja)</option>
+              <option value="ko">🇰🇷 Tiếng Hàn (ko)</option>
+              <option value="zh">🇨🇳 Tiếng Trung (zh)</option>
+              <option value="th">🇹🇭 Tiếng Thái (th)</option>
+              <option value="es">🇪🇸 Tiếng Tây Ban Nha (es)</option>
+              <option value="fr">🇫🇷 Tiếng Pháp (fr)</option>
+              <option value="de">🇩🇪 Tiếng Đức (de)</option>
+              <option value="pt">🇧🇷 Tiếng Bồ Đào Nha (pt)</option>
+              <option value="ru">🇷🇺 Tiếng Nga (ru)</option>
+              <option value="ar">🇸🇦 Tiếng Ả Rập (ar)</option>
+              <option value="hi">🇮🇳 Tiếng Hindi (hi)</option>
+              <option value="id">🇮🇩 Tiếng Indonesia (id)</option>
+              <option value="custom">✏️ Nhập mã khác...</option>
+            </select>
+            <input id="customLang" type="text" placeholder="vd: pl, tr" maxlength="7" tabindex="0"
+              style="width:90px; padding:7px; border:1.5px solid #ddd; border-radius:6px; font-size:12px; display:none;" />
+          </div>
+        </div>
+
+        <!-- Batch mode -->
+        <div id="batchLangPanel" style="display:none;">
+          <div style="display:flex; gap:4px; margin-bottom:6px;">
+            <button onclick="batchSelectAll()" style="flex:1; padding:4px; font-size:11px; border:1px solid #ddd; border-radius:4px; background:#fff; cursor:pointer;">Select All</button>
+            <button onclick="batchClearAll()" style="flex:1; padding:4px; font-size:11px; border:1px solid #ddd; border-radius:4px; background:#fff; cursor:pointer;">Clear</button>
+          </div>
+          <div id="batchCheckboxes" style="display:grid; grid-template-columns:1fr 1fr; gap:4px; font-size:12px; max-height:200px; overflow-y:auto;"></div>
+          <div style="margin-top:4px;">
+            <input id="customBatchLang" placeholder="Add custom: pl,sv,fi" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:4px;">
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Grid layout config (always visible) -->
+      <div style="margin-bottom:10px; text-align:left;">
+        <label style="font-size:11px; font-weight:600; color:#555;">📐 Layout:</label>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; padding:8px; background:#f5f5f5; border-radius:6px; font-size:11px;">
+          <div id="gridColsWrapper">
+            <label>Cols: <input id="gridCols" type="number" min="1" max="10" value="1" style="width:40px; padding:3px; border:1px solid #ddd; border-radius:4px; font-size:11px;"></label>
+          </div>
+          <div>
+            <label>H-Gap: <input id="gridGapH" type="number" min="0" max="2000" value="500" step="50" style="width:50px; padding:3px; border:1px solid #ddd; border-radius:4px; font-size:11px;">px</label>
+          </div>
+          <div>
+            <label>V-Gap: <input id="gridGapV" type="number" min="0" max="2000" value="500" step="50" style="width:50px; padding:3px; border:1px solid #ddd; border-radius:4px; font-size:11px;">px</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Translate button -->
+      <button id="translateBtn"
+        style="width:100%; padding:11px; background:#0D99FF; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:13px;">
+        🚀 Dịch ngay
+      </button>
+
+      <!-- Token usage summary -->
+      <div id="tokenSummary" style="display:none; margin-top:8px; padding:6px 10px; border-radius:6px; background:#e3f2fd; font-size:10px; text-align:left; color:#1565C0;">
+      </div>
+
+      <p id="status" style="margin-top:8px; font-size:11px; font-weight:500;"></p>
+
+      <!-- Overflow Review Panel -->
+      <div id="overflowPanel" style="display:none; margin-top:12px; border:1px solid #e0e0e0; border-radius:8px; padding:12px; background:#fff8f0;">
+        <div style="font-weight:600; margin-bottom:8px;">⚠️ Overflow Review</div>
+        <div id="overflowSummary" style="font-size:12px; margin-bottom:8px;"></div>
+        <div id="overflowDetail" style="display:none; padding:8px; background:#fff; border-radius:6px; border:1px solid #eee;">
+          <div id="overflowCounter" style="font-size:11px; color:#888; margin-bottom:4px;"></div>
+          <div id="overflowText" style="font-size:13px; font-weight:500; margin-bottom:4px;"></div>
+          <div id="overflowInfo" style="font-size:11px; color:#666; margin-bottom:8px;"></div>
+          <div style="display:flex; gap:6px;">
+            <button id="btnOverflowPrev" style="flex:1; padding:6px; border:1px solid #ddd; border-radius:4px; background:#fff; cursor:pointer;">◀ Prev</button>
+            <button id="btnOverflowGo" style="flex:2; padding:6px; border:none; border-radius:4px; background:#0d99ff; color:#fff; cursor:pointer; font-weight:500;">Go to node</button>
+            <button id="btnOverflowNext" style="flex:1; padding:6px; border:1px solid #ddd; border-radius:4px; background:#fff; cursor:pointer;">Next ▶</button>
+          </div>
+        </div>
+        <button id="btnCloseOverflow" style="margin-top:8px; width:100%; padding:6px; border:1px solid #ddd; border-radius:4px; background:#fff; cursor:pointer;">Close</button>
+      </div>
+
+      <!-- Batch Progress Panel -->
+      <div id="batchPanel" style="display:none; margin-top:12px; border:1px solid #e0e0e0; border-radius:8px; padding:12px;">
+        <div style="font-weight:600; margin-bottom:8px;">Batch Translation</div>
+        <div style="background:#eee; border-radius:4px; height:8px; margin-bottom:8px;">
+          <div id="batchProgressBar" style="background:#0d99ff; height:100%; border-radius:4px; width:0%; transition:width 0.3s;"></div>
+        </div>
+        <div id="batchProgressText" style="font-size:12px; color:#666; margin-bottom:8px;"></div>
+        <div id="batchLangGrid" style="display:grid; grid-template-columns:repeat(5,1fr); gap:4px; font-size:11px; margin-bottom:8px;"></div>
+        <div id="batchCurrentAction" style="font-size:12px; color:#888;"></div>
+        <button id="btnCancelBatch" style="margin-top:8px; width:100%; padding:6px; border:1px solid #ddd; border-radius:4px; background:#fff; cursor:pointer;">Cancel</button>
+      </div>
+
+      <!-- Batch Summary Panel -->
+      <div id="batchSummaryPanel" style="display:none; margin-top:12px; border:1px solid #e0e0e0; border-radius:8px; padding:12px;">
+        <div style="font-weight:600; margin-bottom:8px;">Batch Complete</div>
+        <div id="batchSummaryText" style="font-size:12px; margin-bottom:8px;"></div>
+        <div style="display:flex; gap:6px;">
+          <button id="btnRetryFailed" style="flex:1; padding:6px; border:1px solid #ddd; border-radius:4px; background:#fff; cursor:pointer; display:none;">Retry Failed</button>
+          <button id="btnReviewOverflows" style="flex:1; padding:6px; border:none; border-radius:4px; background:#f0ad4e; color:#fff; cursor:pointer; display:none;">Review Overflows</button>
+        </div>
+        <button id="btnCloseSummary" style="margin-top:6px; width:100%; padding:6px; border:1px solid #ddd; border-radius:4px; background:#fff; cursor:pointer;">Close</button>
       </div>
     </div>
 
-    <div id="promptGuide"
-      style="display: none; margin-top: 6px; padding: 8px; background: var(--info-bg); border: 1px solid var(--info-border); border-radius: 6px; font-size: 10px; color: var(--text);">
-      <p style="margin: 0 0 6px 0; font-weight: 600; color: var(--brand);">💡 Prompt hoạt động thế nào?</p>
-      <p style="margin: 0 0 4px 0;">Plugin trích text từ Figma → gửi kèm prompt cho AI → AI trả JSON đã dịch → plugin gắn lại vào Figma.</p>
+    <!-- ==================== SETTINGS TAB ==================== -->
+    <div id="tab-settings" class="tab-content">
 
-      <p style="margin: 6px 0 2px 0; font-weight: 600; color: var(--warning-text);">📥 Đầu vào (AI nhận được):</p>
-      <div style="background: var(--bg2); padding: 5px 8px; border-radius: 4px; font-family: monospace; font-size: 9px; margin-bottom: 4px; white-space: pre-wrap; line-height: 1.5;">
-        ...Dịch sang <b>Tiếng Việt</b> (mã: <b>vi</b>)...
-        Danh sách: <b>["Settings", "Delete", "Save changes"]</b></div>
+      <!-- API KEY -->
+      <div style="margin-bottom:10px; text-align:left;">
+        <label style="font-size:11px; font-weight:600; color:#555;">🔑 API Key (Google AI Studio):</label>
+        <div style="display:flex; gap:6px; margin-top:4px;">
+          <input id="apiKeyInput" type="password" placeholder="Dán API Key vào đây..."
+            style="flex:1; padding:7px 10px; border:1.5px solid #ddd; border-radius:6px; font-size:12px;" />
+          <button id="toggleKeyBtn" title="Hiện/ẩn key"
+            style="padding:6px 10px; border:1.5px solid #ddd; border-radius:6px; background:white; cursor:pointer; font-size:13px;">
+            👁️
+          </button>
+        </div>
+        <p id="apiKeyHint" style="font-size:10px; margin:3px 0 0 2px; color:#999; min-height:14px;">Lấy key tại <b>aistudio.google.com</b></p>
+      </div>
 
-      <p style="margin: 4px 0 2px 0; font-weight: 600; color: var(--success-text);">📤 Đầu ra (AI phải trả về):</p>
-      <div style="background: var(--bg2); padding: 5px 8px; border-radius: 4px; font-family: monospace; font-size: 9px; margin-bottom: 6px; white-space: pre-wrap; line-height: 1.5;">
-        {
-        "Settings": "Cài đặt",
-        "Delete": "Xoá",
-        "Save changes": "Lưu thay đổi"
-        }</div>
+      <!-- MODEL -->
+      <div style="margin-bottom:10px; text-align:left;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label style="font-size:11px; font-weight:600; color:#555;">⚡ Model:</label>
+          <button id="refreshModelsBtn" title="Tải lại danh sách model từ Google"
+            style="font-size:10px; padding:2px 8px; border:1px solid #ddd; border-radius:4px; background:#f5f5f5; cursor:pointer; color:#666;">🔄 Tải model</button>
+        </div>
+        <select id="modelSelect"
+          style="width:100%; margin-top:4px; padding:7px; border:1.5px solid #ddd; border-radius:6px; font-size:12px; background:white; cursor:pointer;">
+          <option value="gemini-2.5-flash" selected>⚡ gemini-2.5-flash (mặc định)</option>
+        </select>
+        <p id="modelHint" style="font-size:10px; margin:3px 0 0 2px; color:#999; min-height:14px;">Nhập API Key rồi bấm 🔄 để tải danh sách model</p>
+      </div>
 
-      <p style="margin: 0 0 2px 0; font-weight: 600;">📌 3 biến tự động thay thế:</p>
-      <table style="width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 6px;">
-        <tr style="background: var(--bg2);">
-          <td style="padding: 3px 6px; border: 1px solid var(--border); font-weight: 600; font-family: monospace;">{{TEXT_LIST}}</td>
-          <td style="padding: 3px 6px; border: 1px solid var(--border);">Danh sách text trích từ Figma <b>(bắt buộc)</b></td>
-        </tr>
-        <tr>
-          <td style="padding: 3px 6px; border: 1px solid var(--border); font-family: monospace;">{{LANG_NAME}}</td>
-          <td style="padding: 3px 6px; border: 1px solid var(--border);">Tên ngôn ngữ (vd: Tiếng Việt, Tiếng Nhật)</td>
-        </tr>
-        <tr style="background: var(--bg2);">
-          <td style="padding: 3px 6px; border: 1px solid var(--border); font-family: monospace;">{{LANG_CODE}}</td>
-          <td style="padding: 3px 6px; border: 1px solid var(--border);">Mã ISO ngôn ngữ (vd: vi, ja, ko)</td>
-        </tr>
-      </table>
+      <!-- PROMPT -->
+      <div style="margin-bottom:10px; text-align:left;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label style="font-size:11px; font-weight:600; color:#555;">📝 Prompt (tuỳ chỉnh):</label>
+          <div style="display:flex; gap:4px;">
+            <button id="resetPromptBtn" title="Khôi phục prompt mặc định"
+              style="font-size:10px; padding:2px 8px; border:1px solid #ddd; border-radius:4px; background:#fff3e0; cursor:pointer; color:#E65100; display:none;">🔄 Mặc định</button>
+            <button id="togglePromptBtn"
+              style="font-size:10px; padding:2px 8px; border:1px solid #ddd; border-radius:4px; background:#f5f5f5; cursor:pointer; color:#666;">Hiện/Ẩn</button>
+          </div>
+        </div>
 
-      <p style="margin: 0 0 2px 0; font-weight: 600;">✏️ Tuỳ chỉnh thêm vào prompt:</p>
-      <ul style="margin: 0; padding-left: 16px; line-height: 1.6;">
-        <li><i>"Giữ nguyên tên riêng, brand name"</i></li>
-        <li><i>"Dùng giọng thân mật"</i> hoặc <i>"giọng trang trọng"</i></li>
-        <li><i>"Mỗi bản dịch tối đa 15 ký tự"</i> (khi UI hẹp)</li>
-        <li><i>"Nếu là thuật ngữ kỹ thuật thì giữ nguyên tiếng Anh"</i></li>
-      </ul>
-    </div>
+        <!-- Prompt guide -->
+        <div id="promptGuide"
+          style="display:none; margin-top:6px; padding:8px; background:#f0f7ff; border:1px solid #c2e0ff; border-radius:6px; font-size:10px; color:#444;">
+          <p style="margin:0 0 6px; font-weight:600; color:#1565C0;">💡 Prompt hoạt động thế nào?</p>
+          <p style="margin:0 0 4px;">Plugin trích text từ Figma → gửi kèm prompt cho AI → AI trả JSON đã dịch → plugin gắn lại vào Figma.</p>
+          <p style="margin:6px 0 2px; font-weight:600;">📌 5 biến tự động thay thế:</p>
+          <table style="width:100%; border-collapse:collapse; font-size:9px; margin-bottom:6px;">
+            <tr style="background:#e3f2fd;"><td style="padding:3px 6px; border:1px solid #c2e0ff; font-weight:600; font-family:monospace;">{{TEXT_LIST}}</td><td style="padding:3px 6px; border:1px solid #c2e0ff;">Danh sách text trích từ Figma <b>(bắt buộc)</b></td></tr>
+            <tr><td style="padding:3px 6px; border:1px solid #c2e0ff; font-family:monospace;">{{SOURCE_LANG_NAME}}</td><td style="padding:3px 6px; border:1px solid #c2e0ff;">Tên ngôn ngữ gốc (vd: English)</td></tr>
+            <tr style="background:#e3f2fd;"><td style="padding:3px 6px; border:1px solid #c2e0ff; font-family:monospace;">{{SOURCE_LANG_CODE}}</td><td style="padding:3px 6px; border:1px solid #c2e0ff;">Mã ISO ngôn ngữ gốc (vd: en)</td></tr>
+            <tr><td style="padding:3px 6px; border:1px solid #c2e0ff; font-family:monospace;">{{LANG_NAME}}</td><td style="padding:3px 6px; border:1px solid #c2e0ff;">Tên ngôn ngữ đích (vd: Tiếng Việt)</td></tr>
+            <tr style="background:#e3f2fd;"><td style="padding:3px 6px; border:1px solid #c2e0ff; font-family:monospace;">{{LANG_CODE}}</td><td style="padding:3px 6px; border:1px solid #c2e0ff;">Mã ISO ngôn ngữ đích (vd: vi, ja)</td></tr>
+          </table>
+        </div>
 
-    <textarea id="promptInput" rows="6"
-      style="width: 100%; margin-top: 4px; padding: 7px; font-size: 11px; resize: vertical; display: none;">Bạn là chuyên gia dịch thuật UI/UX với 10 năm kinh nghiệm. Hãy dịch danh sách text UI dưới đây sang {{LANG_NAME}} (mã: {{LANG_CODE}}).
+        <textarea id="promptInput" rows="6"
+          style="width:100%; margin-top:4px; padding:7px; border:1.5px solid #ddd; border-radius:6px; font-size:11px; font-family:'Segoe UI',sans-serif; resize:vertical; display:none;">Bạn là chuyên gia dịch thuật UI/UX với 20 năm kinh nghiệm. Hãy dịch danh sách text UI dưới đây từ {{SOURCE_LANG_NAME}} ({{SOURCE_LANG_CODE}}) sang {{LANG_NAME}} (mã: {{LANG_CODE}}).
 
-QUY TẮC BẮT BUỘC:
-1. Mỗi bản dịch PHẢI có độ dài tương đương hoặc ngắn hơn text gốc. KHÔNG ĐƯỢC dài hơn 30% so với text gốc.
-2. Nếu bản dịch tự nhiên quá dài → dùng từ ngắn hơn, viết tắt hoặc lược bỏ từ phụ, nhưng vẫn giữ đúng nghĩa.
-3. Dịch tự nhiên, phù hợp giao diện điện thoại.
-4. Giữ nguyên tên riêng, brand name, emoji, số.
-5. Thuật ngữ kỹ thuật phổ biến → giữ tiếng Anh.
+YÊU CẦU:
+- Dịch ngắn gọn, tự nhiên, phù hợp giao diện điện thoại
+- Giữ nguyên tên riêng, brand name, emoji
+- Nếu là thuật ngữ kỹ thuật phổ biến thì giữ nguyên
 
 ĐẦU VÀO: {{TEXT_LIST}}
 
-ĐẦU RA: JSON object, key = text gốc, value = bản dịch {{LANG_NAME}}.
+ĐẦU RA: Trả về JSON object, key là text gốc {{SOURCE_LANG_NAME}}, value là bản dịch {{LANG_NAME}}.
 Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}</textarea>
+      </div>
+    </div>
+
+    <!-- ==================== LOG TAB ==================== -->
+    <div id="tab-log" class="tab-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <label style="font-size:11px; font-weight:600; color:#555;">📋 Activity Log</label>
+        <div style="display:flex; gap:4px;">
+          <button onclick="toggleAllLogGroups()" style="font-size:10px; padding:2px 8px; border:1px solid #ddd; border-radius:4px; background:#f5f5f5; cursor:pointer; color:#666;">Expand/Collapse All</button>
+          <button onclick="clearLog()" style="font-size:10px; padding:2px 8px; border:1px solid #ddd; border-radius:4px; background:#f5f5f5; cursor:pointer; color:#666;">Clear</button>
+        </div>
+      </div>
+      <!-- Token usage total -->
+      <div id="tokenTotal" style="display:none; margin-bottom:8px; padding:6px 10px; border-radius:6px; background:#e3f2fd; font-size:10px; color:#1565C0;"></div>
+      <div id="logContainer" style="font-family:'Cascadia Code','Consolas',monospace; max-height:500px; overflow-y:auto;"></div>
+    </div>
+
   </div>
-
-  <!-- LAYOUT PROTECTION -->
-  <div style="margin-bottom: 10px; text-align: left;">
-    <label style="display: flex; gap: 6px; align-items: center; font-size: 11px; cursor: pointer; padding: 6px 8px; background: var(--info-bg); border: 1px solid var(--info-border); border-radius: 6px;">
-      <input type="checkbox" id="layoutProtect" checked
-        style="accent-color: var(--brand); width: 14px; height: 14px; cursor: pointer; border: none;">
-      <span style="color: var(--brand); font-weight: 500;">🛡️ Bảo vệ layout (cảnh báo khi text nhảy dòng)</span>
-    </label>
-    <p class="hint">Phát hiện text dịch bị nhiều dòng hơn gốc, đề xuất dịch ngắn hơn</p>
-  </div>
-
-  <button id="translateBtn"
-    style="width: 100%; padding: 11px; background: var(--brand); color: var(--brand-text); border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px;">
-    🚀 Dịch ngay
-  </button>
-  <p id="status" style="margin-top: 12px; font-size: 11px; font-weight: 500;"></p>
-
 </div>
 
 <script>
-  // Bảng tra tên ngôn ngữ đầy đủ từ mã ISO
+  // ===== TAB SYSTEM =====
+  function switchTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tabName).classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      if (b.textContent.toLowerCase().includes(tabName)) b.classList.add('active');
+    });
+  }
+
+  // ===== ACTIVITY LOG =====
+  let _logGroupCounter = 0;
+  let _currentLogGroup = null;
+
+  function logTime() {
+    const d = new Date();
+    return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  function startLogGroup(title) {
+    const container = document.getElementById('logContainer');
+    const groupId = 'log-group-' + (++_logGroupCounter);
+    const header = document.createElement('div');
+    header.className = 'log-group-header';
+    header.innerHTML = `<span class="log-time">[${logTime()}]</span> ▼ ${title}`;
+    header.onclick = () => {
+      const body = document.getElementById(groupId);
+      const collapsed = body.classList.toggle('collapsed');
+      header.innerHTML = `<span class="log-time">[${logTime()}]</span> ${collapsed ? '▶' : '▼'} ${title}`;
+    };
+    container.appendChild(header);
+
+    const body = document.createElement('div');
+    body.id = groupId;
+    body.className = 'log-group-body';
+    container.appendChild(body);
+
+    _currentLogGroup = groupId;
+    container.scrollTop = container.scrollHeight;
+    return groupId;
+  }
+
+  function addLog(text, type = 'info') {
+    const container = _currentLogGroup
+      ? document.getElementById(_currentLogGroup)
+      : document.getElementById('logContainer');
+    if (!container) return;
+
+    const entry = document.createElement('div');
+    entry.className = 'log-entry log-' + type;
+    entry.innerHTML = `<span class="log-time">[${logTime()}]</span> ${text}`;
+    container.appendChild(entry);
+
+    // Auto-scroll
+    const logRoot = document.getElementById('logContainer');
+    logRoot.scrollTop = logRoot.scrollHeight;
+  }
+
+  function endLogGroup() {
+    _currentLogGroup = null;
+  }
+
+  function clearLog() {
+    document.getElementById('logContainer').innerHTML = '';
+    _currentLogGroup = null;
+  }
+
+  function toggleAllLogGroups() {
+    const bodies = document.querySelectorAll('.log-group-body');
+    const allCollapsed = [...bodies].every(b => b.classList.contains('collapsed'));
+    bodies.forEach(b => {
+      if (allCollapsed) b.classList.remove('collapsed');
+      else b.classList.add('collapsed');
+    });
+  }
+
+  // ===== TOKEN TRACKING =====
+  let _totalTokens = { prompt: 0, candidates: 0, total: 0, calls: 0 };
+
+  function trackTokens(usageMetadata) {
+    if (!usageMetadata) return;
+    const prompt = usageMetadata.promptTokenCount || 0;
+    const candidates = usageMetadata.candidatesTokenCount || 0;
+    const total = usageMetadata.totalTokenCount || 0;
+
+    _totalTokens.prompt += prompt;
+    _totalTokens.candidates += candidates;
+    _totalTokens.total += total;
+    _totalTokens.calls++;
+
+    addLog(`Tokens: ${prompt} prompt + ${candidates} response = ${total} total`, 'info');
+    updateTokenDisplay();
+  }
+
+  function updateTokenDisplay() {
+    const el = document.getElementById('tokenTotal');
+    const summary = document.getElementById('tokenSummary');
+    if (_totalTokens.calls === 0) {
+      el.style.display = 'none';
+      summary.style.display = 'none';
+      return;
+    }
+
+    const text = `📊 ${_totalTokens.calls} API calls | ${_totalTokens.prompt.toLocaleString()} prompt + ${_totalTokens.candidates.toLocaleString()} response = ${_totalTokens.total.toLocaleString()} total tokens`;
+    el.style.display = 'block';
+    el.textContent = text;
+    summary.style.display = 'block';
+    summary.textContent = text;
+  }
+
+  function resetTokens() {
+    _totalTokens = { prompt: 0, candidates: 0, total: 0, calls: 0 };
+    updateTokenDisplay();
+  }
+
+  // ===== LANG NAMES =====
   const LANG_NAMES = {
     vi: 'Tiếng Việt', ja: 'Tiếng Nhật', ko: 'Tiếng Hàn',
     zh: 'Tiếng Trung', th: 'Tiếng Thái', es: 'Tiếng Tây Ban Nha',
@@ -183,7 +394,414 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}</textarea>
     id: 'Tiếng Indonesia'
   };
 
-  // ===== FETCH MODELS TỪ API =====
+  const LANGUAGES = [
+    { code: 'vi', name: 'Vietnamese', flag: '🇻🇳' },
+    { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
+    { code: 'ko', name: 'Korean', flag: '🇰🇷' },
+    { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
+    { code: 'th', name: 'Thai', flag: '🇹🇭' },
+    { code: 'es', name: 'Spanish', flag: '🇪🇸' },
+    { code: 'fr', name: 'French', flag: '🇫🇷' },
+    { code: 'de', name: 'German', flag: '🇩🇪' },
+    { code: 'pt', name: 'Portuguese', flag: '🇧🇷' },
+    { code: 'ru', name: 'Russian', flag: '🇷🇺' },
+    { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
+    { code: 'hi', name: 'Hindi', flag: '🇮🇳' },
+    { code: 'id', name: 'Indonesian', flag: '🇮🇩' },
+  ];
+
+  // ===== LANGUAGE MODE =====
+  let langMode = 'single';
+
+  function setLangMode(mode) {
+    langMode = mode;
+    document.getElementById('singleLangPanel').style.display = mode === 'single' ? 'block' : 'none';
+    document.getElementById('batchLangPanel').style.display = mode === 'batch' ? 'block' : 'none';
+    document.getElementById('gridColsWrapper').style.display = mode === 'batch' ? 'inline-block' : 'none';
+    document.getElementById('btnModeSingle').classList.toggle('active', mode === 'single');
+    document.getElementById('btnModeBatch').classList.toggle('active', mode === 'batch');
+    if (mode === 'single') {
+      document.getElementById('batchPanel').style.display = 'none';
+      document.getElementById('batchSummaryPanel').style.display = 'none';
+      document.getElementById('overflowPanel').style.display = 'none';
+      document.getElementById('status').innerText = '';
+    }
+    updateButtonLabel();
+  }
+
+  function buildBatchCheckboxes() {
+    const container = document.getElementById('batchCheckboxes');
+    container.innerHTML = LANGUAGES.map(l =>
+      `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+        <input type="checkbox" class="batch-lang-cb" value="${l.code}" data-name="${l.name}">
+        ${l.flag} ${l.name}
+      </label>`
+    ).join('');
+    container.querySelectorAll('.batch-lang-cb').forEach(cb => {
+      cb.addEventListener('change', updateButtonLabel);
+    });
+  }
+
+  function getSelectedBatchLangs() {
+    const checked = [...document.querySelectorAll('.batch-lang-cb:checked')].map(cb => ({
+      code: cb.value, name: cb.dataset.name,
+    }));
+    const custom = document.getElementById('customBatchLang').value.trim();
+    if (custom) {
+      custom.split(',').map(c => c.trim()).filter(c => c).forEach(code => {
+        if (!checked.find(l => l.code === code)) checked.push({ code, name: code.toUpperCase() });
+      });
+    }
+    return checked;
+  }
+
+  function batchSelectAll() { document.querySelectorAll('.batch-lang-cb').forEach(cb => { cb.checked = true; }); updateButtonLabel(); }
+  function batchClearAll() { document.querySelectorAll('.batch-lang-cb').forEach(cb => { cb.checked = false; }); updateButtonLabel(); }
+
+  buildBatchCheckboxes();
+
+  // ===== OVERFLOW REVIEW =====
+  let allOverflows = {};
+  let currentOverflowIndex = 0;
+
+  function flatOverflows() {
+    const flat = [];
+    for (const lang in allOverflows) { for (const o of allOverflows[lang]) { flat.push({ ...o, lang }); } }
+    return flat;
+  }
+
+  function showOverflowPanel() {
+    const panel = document.getElementById('overflowPanel');
+    const summary = document.getElementById('overflowSummary');
+    const flat = flatOverflows();
+    if (flat.length === 0) { panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+    let html = '';
+    for (const lang in allOverflows) {
+      const count = allOverflows[lang].length;
+      html += `<div>${lang}: ${count} issue${count > 1 ? 's' : ''}</div>`;
+    }
+    summary.innerHTML = html;
+    currentOverflowIndex = 0;
+    showOverflowItem();
+  }
+
+  function showOverflowItem() {
+    const flat = flatOverflows();
+    const detail = document.getElementById('overflowDetail');
+    if (flat.length === 0) { detail.style.display = 'none'; return; }
+    detail.style.display = 'block';
+    const item = flat[currentOverflowIndex];
+    document.getElementById('overflowCounter').textContent = `[${currentOverflowIndex + 1}/${flat.length}] ${item.lang}`;
+    document.getElementById('overflowText').textContent = `"${item.text}${item.text.length >= 50 ? '...' : ''}"`;
+    const typeLabel = item.type === 'clipped' ? '✂️ Clipped' : '↔️ Expanded';
+    document.getElementById('overflowInfo').textContent = `${typeLabel} in "${item.parentName}" — ${Math.round(item.actualWidth)}×${Math.round(item.actualHeight)} vs ${Math.round(item.containerWidth)}×${Math.round(item.containerHeight)}`;
+  }
+
+  document.getElementById('btnOverflowPrev').onclick = () => { const f = flatOverflows(); if (!f.length) return; currentOverflowIndex = (currentOverflowIndex - 1 + f.length) % f.length; showOverflowItem(); };
+  document.getElementById('btnOverflowNext').onclick = () => { const f = flatOverflows(); if (!f.length) return; currentOverflowIndex = (currentOverflowIndex + 1) % f.length; showOverflowItem(); };
+  document.getElementById('btnOverflowGo').onclick = () => { const f = flatOverflows(); if (!f.length) return; parent.postMessage({ pluginMessage: { type: 'NAVIGATE_NODE', nodeId: f[currentOverflowIndex].nodeId } }, '*'); };
+  document.getElementById('btnCloseOverflow').onclick = () => { document.getElementById('overflowPanel').style.display = 'none'; };
+
+  // ===== BATCH STATE =====
+  let batchInProgress = false;
+  let batchCancelled = false;
+  let currentBatchLang = null;
+  let currentBatchLangInfo = null;
+  let batchResults = [];
+  let batchFailedLangs = [];
+
+  function getGridCols() { return parseInt(document.getElementById('gridCols').value) || 5; }
+  function getGridGapH() { return parseInt(document.getElementById('gridGapH').value) || 200; }
+  function getGridGapV() { return parseInt(document.getElementById('gridGapV').value) || 300; }
+
+  function calcGridPosition(index, sourceX, sourceY, sourceW, sourceH) {
+    const cols = getGridCols(), gapH = getGridGapH(), gapV = getGridGapV();
+    const col = index % cols, row = Math.floor(index / cols);
+    return {
+      x: sourceX + col * (sourceW + gapH),
+      y: sourceY + sourceH + gapV + row * (sourceH + gapV),
+    };
+  }
+
+  function waitForMessage(type, timeoutMs = 120000) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { window.removeEventListener('message', handler); reject(new Error(`Timeout waiting for ${type}`)); }, timeoutMs);
+      const handler = (event) => {
+        const msg = event.data.pluginMessage;
+        if (msg && msg.type === type) { clearTimeout(timer); window.removeEventListener('message', handler); resolve(msg); }
+        // Reject on error messages so callers don't hang forever
+        if (msg && msg.type === 'TRANSLATE_ERROR') { clearTimeout(timer); window.removeEventListener('message', handler); reject(new Error(msg.error || 'Plugin error')); }
+      };
+      window.addEventListener('message', handler);
+    });
+  }
+
+  // ===== GEMINI API (with token tracking) =====
+  async function callGeminiAPI(texts, langCode, langName) {
+    const apiKey = getApiKey(), model = getModel();
+    const sourceLang = getSourceLang();
+    const promptTemplate = document.getElementById('promptInput').value;
+    const prompt = promptTemplate
+      .replace(/{{SOURCE_LANG_NAME}}/g, sourceLang.name)
+      .replace(/{{SOURCE_LANG_CODE}}/g, sourceLang.code)
+      .replace(/{{LANG_NAME}}/g, langName)
+      .replace(/{{LANG_CODE}}/g, langCode)
+      .replace(/{{TEXT_LIST}}/g, JSON.stringify(texts));
+
+    addLog(`Calling Gemini API (${model}) for ${langName}...`);
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: 'application/json' },
+      }),
+    });
+
+    const data = await response.json();
+
+    // Track tokens
+    if (data.usageMetadata) {
+      trackTokens(data.usageMetadata);
+    }
+
+    if (!response.ok || data.error) {
+      const errMsg = handleApiError(response, data);
+      addLog(`API Error: ${errMsg}`, 'error');
+      throw new Error(errMsg);
+    }
+
+    if (!data.candidates || !data.candidates.length) {
+      const reason = data.promptFeedback?.blockReason ? `Blocked: ${data.promptFeedback.blockReason}` : 'No response';
+      addLog(`API returned no candidates: ${reason}`, 'error');
+      throw new Error(reason);
+    }
+
+    const jsonString = data.candidates[0]?.content?.parts?.[0]?.text;
+    if (!jsonString) { addLog('API returned empty text', 'error'); throw new Error('AI trả về rỗng'); }
+
+    const result = JSON.parse(jsonString);
+    addLog(`Got ${Object.keys(result).length} translations`, 'success');
+    return result;
+  }
+
+  // ===== 2-PASS OVERFLOW FIX =====
+  async function runPass2(cloneId, langCode, langName, overflows) {
+    if (overflows.length === 0) return;
+    addLog(`Pass 2: re-translating ${overflows.length} overflow text(s) shorter...`);
+
+    const sourceLang = getSourceLang();
+    const textsForRetranslate = overflows.map(o => ({ original: o.text, maxChars: Math.max(o.text.length, Math.floor(o.containerWidth / 7)) }));
+    const charLimits = textsForRetranslate.map((t, i) => `${i + 1}. "${t.original}" (max ${t.maxChars} characters)`).join('\n');
+
+    // Build pass 2 prompt using user's template as context base
+    const userPrompt = document.getElementById('promptInput').value;
+    const userContext = userPrompt
+      .replace(/{{SOURCE_LANG_NAME}}/g, sourceLang.name)
+      .replace(/{{SOURCE_LANG_CODE}}/g, sourceLang.code)
+      .replace(/{{LANG_NAME}}/g, langName)
+      .replace(/{{LANG_CODE}}/g, langCode)
+      .replace(/{{TEXT_LIST}}/g, '');
+
+    // Extract user's custom rules (YÊU CẦU section) to carry forward
+    const rulesMatch = userContext.match(/YÊU CẦU[:\s]*\n([\s\S]*?)(\n\n|ĐẦU VÀO|$)/);
+    const userRules = rulesMatch ? rulesMatch[1].trim() : '';
+
+    const prompt = `Các bản dịch ${langName} dưới đây bị tràn container. Hãy dịch lại ngắn hơn từ ${sourceLang.name} sang ${langName}. Tuân thủ giới hạn ký tự nghiêm ngặt.
+
+${userRules ? 'QUY TẮC BỔ SUNG:\n' + userRules + '\n\n' : ''}DANH SÁCH CẦN DỊCH LẠI:
+${charLimits}
+
+ĐẦU RA: Trả về JSON object, key là text hiện tại, value là bản dịch ngắn hơn.`;
+
+    const apiKey = getApiKey(), model = getModel();
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json' } }),
+    });
+
+    if (!response.ok) { addLog('Pass 2 API call failed (non-fatal)', 'warn'); return; }
+
+    const data = await response.json();
+    if (data.usageMetadata) trackTokens(data.usageMetadata);
+
+    const jsonText = data.candidates[0].content.parts[0].text;
+    const shorterDict = JSON.parse(jsonText);
+
+    const translationMap = {};
+    for (const o of overflows) { const shorter = shorterDict[o.text]; if (shorter) translationMap[o.nodeId] = shorter; }
+
+    if (Object.keys(translationMap).length > 0) {
+      addLog(`Applying ${Object.keys(translationMap).length} shorter translations...`);
+      parent.postMessage({ pluginMessage: { type: 'APPLY_OVERFLOW_FIX', translations: translationMap } }, '*');
+      await waitForMessage('OVERFLOW_FIX_DONE', 30000);
+      addLog('Pass 2 applied', 'success');
+    } else {
+      addLog('Pass 2: no shorter translations generated', 'warn');
+    }
+  }
+
+  // ===== BATCH ORCHESTRATION =====
+  async function runBatch(languages) {
+    batchInProgress = true;
+    batchCancelled = false;
+    batchResults = [];
+    batchFailedLangs = [];
+    allOverflows = {};
+    resetTokens();
+
+    startLogGroup(`Batch: ${languages.length} languages`);
+    addLog(`Starting batch translation for: ${languages.map(l => l.code.toUpperCase()).join(', ')}`);
+
+    const panel = document.getElementById('batchPanel');
+    const grid = document.getElementById('batchLangGrid');
+    panel.style.display = 'block';
+    document.getElementById('batchSummaryPanel').style.display = 'none';
+    document.getElementById('overflowPanel').style.display = 'none';
+
+    grid.innerHTML = languages.map(l =>
+      `<div id="batchStatus_${l.code}" style="text-align:center; padding:2px; border-radius:3px; background:#eee;">○ ${l.code.toUpperCase()}</div>`
+    ).join('');
+
+    let sourceTexts, sourceInfo;
+    try {
+      addLog('Extracting source texts...');
+      parent.postMessage({ pluginMessage: { type: 'EXTRACT_TEXT', langCode: '', langName: '' } }, '*');
+      const extractMsg = await waitForMessage('START_TRANSLATE');
+      sourceTexts = extractMsg.texts;
+      addLog(`Found ${sourceTexts.length} text nodes`, 'success');
+
+      addLog('Getting source frame position...');
+      parent.postMessage({ pluginMessage: { type: 'GET_SOURCE_INFO' } }, '*');
+      sourceInfo = await waitForMessage('SOURCE_INFO');
+      addLog(`Source: "${sourceInfo.name}" at (${Math.round(sourceInfo.x)}, ${Math.round(sourceInfo.y)}) ${Math.round(sourceInfo.width)}×${Math.round(sourceInfo.height)}`, 'success');
+    } catch (initErr) {
+      addLog(`Batch init failed: ${initErr.message}`, 'error');
+      endLogGroup();
+      batchInProgress = false;
+      currentBatchLang = null;
+      panel.style.display = 'none';
+      document.getElementById('status').innerText = '❌ ' + initErr.message;
+      document.getElementById('status').style.color = '#E53935';
+      return;
+    }
+
+    const startTime = Date.now();
+
+    for (let i = 0; i < languages.length; i++) {
+      if (batchCancelled) { addLog('Batch cancelled by user', 'warn'); break; }
+
+      const lang = languages[i];
+      currentBatchLang = `${lang.name} (${lang.code.toUpperCase()})`;
+      currentBatchLangInfo = lang;
+
+      startLogGroup(`[${i + 1}/${languages.length}] ${lang.name}`);
+
+      const pct = Math.round((i / languages.length) * 100);
+      document.getElementById('batchProgressBar').style.width = pct + '%';
+      document.getElementById('batchProgressText').textContent = `${i}/${languages.length}`;
+      document.getElementById('batchCurrentAction').textContent = `Translating: ${lang.name}...`;
+      document.getElementById(`batchStatus_${lang.code}`).style.background = '#cce5ff';
+      document.getElementById(`batchStatus_${lang.code}`).textContent = `⟳ ${lang.code.toUpperCase()}`;
+
+      try {
+        const translatedDict = await callGeminiAPI(sourceTexts, lang.code, lang.name);
+        const pos = calcGridPosition(i, sourceInfo.x, sourceInfo.y, sourceInfo.width, sourceInfo.height);
+
+        addLog(`Applying translation at (${Math.round(pos.x)}, ${Math.round(pos.y)})...`);
+        parent.postMessage({
+          pluginMessage: { type: 'APPLY_TRANSLATION', translatedDict, langCode: lang.code, langName: lang.name, x: pos.x, y: pos.y, sourceFrameId: sourceInfo.id }
+        }, '*');
+
+        const doneMsg = await waitForMessage('TRANSLATION_DONE');
+        addLog(`Applied: ${doneMsg.translatedCount} translated, ${doneMsg.skippedCount} skipped`, 'success');
+
+        if (doneMsg.cloneId) {
+          addLog('Running overflow detection...');
+          parent.postMessage({ pluginMessage: { type: 'DETECT_OVERFLOW', frameId: doneMsg.cloneId } }, '*');
+          const overflowMsg = await waitForMessage('OVERFLOW_RESULT', 30000);
+
+          if (overflowMsg.overflows.length > 0) {
+            addLog(`Found ${overflowMsg.overflows.length} overflow(s)`, 'warn');
+            await runPass2(doneMsg.cloneId, lang.code, lang.name, overflowMsg.overflows);
+
+            parent.postMessage({ pluginMessage: { type: 'DETECT_OVERFLOW', frameId: doneMsg.cloneId } }, '*');
+            const recheck = await waitForMessage('OVERFLOW_RESULT', 30000);
+            if (recheck.overflows.length > 0) {
+              if (!allOverflows[currentBatchLang]) allOverflows[currentBatchLang] = [];
+              allOverflows[currentBatchLang] = recheck.overflows;
+              addLog(`${recheck.overflows.length} overflow(s) remaining after pass 2`, 'warn');
+            } else {
+              addLog('All overflows resolved after pass 2', 'success');
+            }
+          } else {
+            addLog('No overflow detected', 'success');
+          }
+
+          const overflowCount = (allOverflows[currentBatchLang] || []).length;
+          batchResults.push({ code: lang.code, name: lang.name, status: 'success', overflowCount });
+          document.getElementById(`batchStatus_${lang.code}`).style.background = overflowCount > 0 ? '#fff3cd' : '#d4edda';
+          document.getElementById(`batchStatus_${lang.code}`).textContent = (overflowCount > 0 ? '⚠️' : '✓') + ` ${lang.code.toUpperCase()}`;
+        } else {
+          batchResults.push({ code: lang.code, name: lang.name, status: 'success', overflowCount: 0 });
+          document.getElementById(`batchStatus_${lang.code}`).style.background = '#d4edda';
+          document.getElementById(`batchStatus_${lang.code}`).textContent = `✓ ${lang.code.toUpperCase()}`;
+        }
+
+      } catch (err) {
+        addLog(`Failed: ${err.message}`, 'error');
+        batchResults.push({ code: lang.code, name: lang.name, status: 'failed', overflowCount: 0 });
+        batchFailedLangs.push(lang);
+        document.getElementById(`batchStatus_${lang.code}`).style.background = '#f8d7da';
+        document.getElementById(`batchStatus_${lang.code}`).textContent = `✗ ${lang.code.toUpperCase()}`;
+      }
+
+      endLogGroup();
+    }
+
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    document.getElementById('batchProgressBar').style.width = '100%';
+    document.getElementById('batchCurrentAction').textContent = '';
+    batchInProgress = false;
+    currentBatchLang = null;
+    currentBatchLangInfo = null;
+
+    addLog(`Batch complete: ${elapsed}s, ${_totalTokens.total.toLocaleString()} tokens used`, 'success');
+    endLogGroup();
+
+    showBatchSummary(elapsed);
+  }
+
+  function showBatchSummary(elapsed) {
+    const panel = document.getElementById('batchSummaryPanel');
+    const succeeded = batchResults.filter(r => r.status === 'success').length;
+    const failed = batchResults.filter(r => r.status === 'failed').length;
+    const totalOverflows = Object.values(allOverflows).reduce((sum, arr) => sum + arr.length, 0);
+
+    let html = `<div>${batchResults.length} languages in ${elapsed}s</div>`;
+    html += `<div style="margin-top:4px;">✓ ${succeeded} succeeded</div>`;
+    if (failed > 0) html += `<div>✗ ${failed} failed</div>`;
+    if (totalOverflows > 0) html += `<div>⚠️ ${totalOverflows} overflow(s) across languages</div>`;
+    html += `<div style="margin-top:4px; font-size:10px; color:#1565C0;">📊 ${_totalTokens.total.toLocaleString()} tokens used (${_totalTokens.calls} API calls)</div>`;
+
+    document.getElementById('batchSummaryText').innerHTML = html;
+    document.getElementById('btnRetryFailed').style.display = failed > 0 ? 'block' : 'none';
+    document.getElementById('btnReviewOverflows').style.display = totalOverflows > 0 ? 'block' : 'none';
+    document.getElementById('batchPanel').style.display = 'none';
+    panel.style.display = 'block';
+  }
+
+  document.getElementById('btnCancelBatch').onclick = () => { batchCancelled = true; };
+  document.getElementById('btnCloseSummary').onclick = () => { document.getElementById('batchSummaryPanel').style.display = 'none'; };
+  document.getElementById('btnRetryFailed').onclick = () => { document.getElementById('batchSummaryPanel').style.display = 'none'; runBatch(batchFailedLangs); };
+  document.getElementById('btnReviewOverflows').onclick = () => { document.getElementById('batchSummaryPanel').style.display = 'none'; showOverflowPanel(); };
+
+  // ===== FETCH MODELS =====
   let _modelsFetched = false;
 
   async function fetchModels(apiKey) {
@@ -201,80 +819,50 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}</textarea>
     try {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=100`);
       const data = await res.json();
+      if (data.error) { hintEl.innerText = '❌ ' + (data.error.message || 'Không tải được model'); hintEl.style.color = '#E53935'; return; }
+      if (!data.models || !data.models.length) { hintEl.innerText = '⚠️ Không tìm thấy model nào'; hintEl.style.color = '#FF9800'; return; }
 
-      if (data.error) {
-        hintEl.innerText = '❌ ' + (data.error.message || 'Không tải được model');
-        hintEl.style.color = 'var(--danger-text)';
-        return;
-      }
+      const textModels = data.models.filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent') && m.name.startsWith('models/'));
+      if (!textModels.length) { hintEl.innerText = '⚠️ Không có model nào hỗ trợ generateContent'; hintEl.style.color = '#FF9800'; return; }
 
-      if (!data.models || !data.models.length) {
-        hintEl.innerText = '⚠️ Không tìm thấy model nào';
-        hintEl.style.color = '#FF9800';
-        return;
-      }
-
-      // Lọc model hỗ trợ generateContent
-      const textModels = data.models.filter(m =>
-        m.supportedGenerationMethods &&
-        m.supportedGenerationMethods.includes('generateContent') &&
-        m.name.startsWith('models/')
-      );
-
-      if (!textModels.length) {
-        hintEl.innerText = '⚠️ Không có model nào hỗ trợ generateContent';
-        hintEl.style.color = '#FF9800';
-        return;
-      }
-
-      // Nhóm model theo version
       const groups = {};
       textModels.forEach(m => {
         const id = m.name.replace('models/', '');
-        let groupName = '📦 Khác';
-        if (id.includes('3.1') || id.includes('3-') || id.includes('3.0')) groupName = '🚀 Gemini 3';
-        else if (id.includes('2.5')) groupName = '✨ Gemini 2.5';
-        else if (id.includes('2.0')) groupName = '📦 Gemini 2.0';
-        else if (id.includes('1.5')) groupName = '📦 Gemini 1.5';
-        else if (id.includes('gemma')) groupName = '💎 Gemma';
-        else if (id.includes('learnlm')) groupName = '📚 LearnLM';
-
-        if (!groups[groupName]) groups[groupName] = [];
-        groups[groupName].push({ id });
+        let g = '📦 Khác';
+        if (id.includes('3.1') || id.includes('3-') || id.includes('3.0')) g = '🚀 Gemini 3';
+        else if (id.includes('2.5')) g = '✨ Gemini 2.5';
+        else if (id.includes('2.0')) g = '📦 Gemini 2.0';
+        else if (id.includes('1.5')) g = '📦 Gemini 1.5';
+        else if (id.includes('gemma')) g = '💎 Gemma';
+        else if (id.includes('learnlm')) g = '📚 LearnLM';
+        if (!groups[g]) groups[g] = [];
+        groups[g].push({ id });
       });
 
-      const groupOrder = ['🚀 Gemini 3', '✨ Gemini 2.5', '📦 Gemini 2.0', '📦 Gemini 1.5', '💎 Gemma', '📚 LearnLM', '📦 Khác'];
-      const sortedGroups = groupOrder.filter(g => groups[g]);
-
+      const order = ['🚀 Gemini 3', '✨ Gemini 2.5', '📦 Gemini 2.0', '📦 Gemini 1.5', '💎 Gemma', '📚 LearnLM', '📦 Khác'];
       selectEl.innerHTML = '';
-      sortedGroups.forEach(groupName => {
+      order.filter(g => groups[g]).forEach(groupName => {
         const optgroup = document.createElement('optgroup');
         optgroup.label = groupName;
-        groups[groupName]
-          .sort((a, b) => a.id.localeCompare(b.id))
-          .forEach(m => {
-            const opt = document.createElement('option');
-            opt.value = m.id;
-            let icon = '📄';
-            if (m.id.includes('pro')) icon = '🧠';
-            else if (m.id.includes('flash-lite') || m.id.includes('flash_lite')) icon = '💨';
-            else if (m.id.includes('flash')) icon = '⚡';
-            else if (m.id.includes('gemma')) icon = '💎';
-            opt.text = `${icon} ${m.id}`;
-            if (m.id === savedModel) opt.selected = true;
-            optgroup.appendChild(opt);
-          });
+        groups[groupName].sort((a, b) => a.id.localeCompare(b.id)).forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = m.id;
+          let icon = '📄';
+          if (m.id.includes('pro')) icon = '🧠';
+          else if (m.id.includes('flash-lite') || m.id.includes('flash_lite')) icon = '💨';
+          else if (m.id.includes('flash')) icon = '⚡';
+          else if (m.id.includes('gemma')) icon = '💎';
+          opt.text = `${icon} ${m.id}`;
+          if (m.id === savedModel) opt.selected = true;
+          optgroup.appendChild(opt);
+        });
         selectEl.appendChild(optgroup);
       });
 
-      if (savedModel && ![...selectEl.options].some(o => o.value === savedModel)) {
-        selectEl.value = selectEl.options[0]?.value || 'gemini-2.5-flash';
-      }
-
+      if (savedModel && ![...selectEl.options].some(o => o.value === savedModel)) selectEl.value = selectEl.options[0]?.value || 'gemini-2.5-flash';
       _modelsFetched = true;
       hintEl.innerText = `✅ Đã tải ${textModels.length} model`;
-      hintEl.style.color = 'var(--success-text)';
-
+      hintEl.style.color = '#4CAF50';
     } catch (err) {
       hintEl.innerText = '❌ Lỗi tải model: ' + err.message;
       hintEl.style.color = 'var(--danger-text)';
@@ -284,15 +872,10 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}</textarea>
     }
   }
 
-  // ===== SAFE STORAGE =====
+  // ===== SAVE SETTINGS =====
   function saveSettings() {
     parent.postMessage({
-      pluginMessage: {
-        type: 'SAVE_SETTINGS',
-        apiKey: document.getElementById('apiKeyInput').value.trim(),
-        model: document.getElementById('modelSelect').value,
-        prompt: document.getElementById('promptInput').value
-      }
+      pluginMessage: { type: 'SAVE_SETTINGS', apiKey: document.getElementById('apiKeyInput').value.trim(), model: document.getElementById('modelSelect').value, prompt: document.getElementById('promptInput').value }
     }, '*');
   }
 
@@ -302,17 +885,8 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}</textarea>
   function setTranslating(isLoading) {
     _isTranslating = isLoading;
     const btn = document.getElementById('translateBtn');
-    if (isLoading) {
-      btn.disabled = true;
-      btn.style.opacity = '0.6';
-      btn.style.cursor = 'wait';
-      btn.innerText = '⏳ Đang dịch...';
-    } else {
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      btn.style.cursor = 'pointer';
-      updateButtonLabel();
-    }
+    if (isLoading) { btn.disabled = true; btn.style.opacity = '0.6'; btn.style.cursor = 'wait'; btn.innerText = '⏳ Đang dịch...'; }
+    else { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; updateButtonLabel(); }
   }
 
   // ===== API ERROR HANDLER =====
@@ -320,7 +894,6 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}</textarea>
     const status = response.status;
     const errMsg = data?.error?.message || '';
     const errStatus = data?.error?.status || '';
-
     if (status === 400 && errMsg.includes('API key')) return '🔑 API Key không hợp lệ!';
     if (status === 403 || errStatus === 'PERMISSION_DENIED') return '🔑 API Key bị từ chối';
     if (status === 429 || errStatus === 'RESOURCE_EXHAUSTED') return '⏱️ Hết quota! Đợi 1 phút rồi thử lại';
@@ -331,340 +904,211 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}</textarea>
   }
 
   // ===== EVENT LISTENERS =====
-  // Lưu key khi thay đổi
   document.getElementById('apiKeyInput').addEventListener('input', () => saveSettings());
-
-  // Nút refresh model
   document.getElementById('refreshModelsBtn').addEventListener('click', () => {
     const apiKey = getApiKey();
-    if (!apiKey) {
-      document.getElementById('modelHint').innerText = '❌ Nhập API Key trước';
-      document.getElementById('modelHint').style.color = 'var(--danger-text)';
-      return;
-    }
-    _modelsFetched = false;
-    fetchModels(apiKey);
+    if (!apiKey) { document.getElementById('modelHint').innerText = '❌ Nhập API Key trước'; document.getElementById('modelHint').style.color = '#E53935'; return; }
+    _modelsFetched = false; fetchModels(apiKey);
   });
-
-  // Toggle hiện/ẩn key
   document.getElementById('toggleKeyBtn').addEventListener('click', () => {
-    const input = document.getElementById('apiKeyInput');
-    const btn = document.getElementById('toggleKeyBtn');
-    if (input.type === 'password') {
-      input.type = 'text';
-      btn.innerText = '🙈';
-    } else {
-      input.type = 'password';
-      btn.innerText = '👁️';
-    }
+    const input = document.getElementById('apiKeyInput'), btn = document.getElementById('toggleKeyBtn');
+    if (input.type === 'password') { input.type = 'text'; btn.innerText = '🙈'; } else { input.type = 'password'; btn.innerText = '👁️'; }
   });
-
-  // Lưu model khi thay đổi
   document.getElementById('modelSelect').addEventListener('change', () => saveSettings());
 
-  // Prompt mặc định
-  const DEFAULT_PROMPT = `Bạn là chuyên gia dịch thuật UI/UX với 20 năm kinh nghiệm. Hãy dịch danh sách text UI dưới đây sang {{LANG_NAME}} (mã: {{LANG_CODE}}).
+  const DEFAULT_PROMPT = `Bạn là chuyên gia dịch thuật UI/UX với 20 năm kinh nghiệm. Hãy dịch danh sách text UI dưới đây từ {{SOURCE_LANG_NAME}} ({{SOURCE_LANG_CODE}}) sang {{LANG_NAME}} (mã: {{LANG_CODE}}).
 
 YÊU CẦU:
 - Dịch ngắn gọn, tự nhiên, phù hợp giao diện điện thoại
 - Giữ nguyên tên riêng, brand name, emoji
-- Nếu là thuật ngữ kỹ thuật phổ biến thì giữ tiếng Anh
+- Nếu là thuật ngữ kỹ thuật phổ biến thì giữ nguyên
 
 ĐẦU VÀO: {{TEXT_LIST}}
 
-ĐẦU RA: Trả về JSON object, key là text gốc tiếng Anh, value là bản dịch {{LANG_NAME}}.
+ĐẦU RA: Trả về JSON object, key là text gốc {{SOURCE_LANG_NAME}}, value là bản dịch {{LANG_NAME}}.
 Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}`;
 
-  // Toggle prompt section
   document.getElementById('togglePromptBtn').addEventListener('click', () => {
-    const ta = document.getElementById('promptInput');
-    const guide = document.getElementById('promptGuide');
-    const resetBtn = document.getElementById('resetPromptBtn');
+    const ta = document.getElementById('promptInput'), guide = document.getElementById('promptGuide'), resetBtn = document.getElementById('resetPromptBtn');
     const isHidden = ta.style.display === 'none';
     ta.style.display = isHidden ? 'block' : 'none';
     guide.style.display = isHidden ? 'block' : 'none';
     resetBtn.style.display = isHidden ? 'inline-block' : 'none';
   });
-
-  // Reset prompt
-  document.getElementById('resetPromptBtn').addEventListener('click', () => {
-    if (confirm('Khôi phục prompt về mặc định?')) {
-      document.getElementById('promptInput').value = DEFAULT_PROMPT;
-      saveSettings();
-    }
-  });
-
-  // Lưu prompt khi thay đổi
+  document.getElementById('resetPromptBtn').addEventListener('click', () => { if (confirm('Khôi phục prompt về mặc định?')) { document.getElementById('promptInput').value = DEFAULT_PROMPT; saveSettings(); } });
   document.getElementById('promptInput').addEventListener('input', () => saveSettings());
 
-  // ===== NGÔN NGỮ =====
+  // ===== LANGUAGE EVENTS =====
   document.getElementById('langSelect').addEventListener('change', (e) => {
-    const customInput = document.getElementById('customLang');
-    customInput.style.display = e.target.value === 'custom' ? 'block' : 'none';
-    if (e.target.value === 'custom') customInput.focus();
+    document.getElementById('customLang').style.display = e.target.value === 'custom' ? 'block' : 'none';
+    if (e.target.value === 'custom') document.getElementById('customLang').focus();
     updateButtonLabel();
   });
-
   document.getElementById('customLang').addEventListener('input', updateButtonLabel);
 
   function updateButtonLabel() {
-    const langCode = getSelectedLang();
-    const langName = LANG_NAMES[langCode] || langCode.toUpperCase();
-    document.getElementById('translateBtn').innerText = `🚀 Dịch sang ${langName}`;
+    const btn = document.getElementById('translateBtn');
+    if (langMode === 'batch') {
+      const count = getSelectedBatchLangs().length;
+      btn.innerText = count > 0 ? `🚀 Translate ${count} languages` : '🚀 Select languages';
+      btn.disabled = count === 0;
+    } else {
+      const langCode = getSelectedLang();
+      const langName = LANG_NAMES[langCode] || langCode.toUpperCase();
+      btn.innerText = `🚀 Dịch sang ${langName}`;
+      btn.disabled = false;
+    }
   }
 
   function getSelectedLang() {
     const sel = document.getElementById('langSelect').value;
-    if (sel === 'custom') {
-      return document.getElementById('customLang').value.trim().toLowerCase() || 'vi';
+    return sel === 'custom' ? (document.getElementById('customLang').value.trim().toLowerCase() || 'vi') : sel;
+  }
+
+  function getSourceLang() {
+    const sel = document.getElementById('sourceLangSelect');
+    if (sel.value === 'custom-src') {
+      const custom = document.getElementById('customSourceLang').value.trim().toLowerCase();
+      return { code: custom || 'en', name: custom ? custom.toUpperCase() : 'English' };
     }
-    return sel;
+    return { code: sel.value, name: sel.options[sel.selectedIndex].dataset.name };
   }
 
-  function getApiKey() {
-    return document.getElementById('apiKeyInput').value.trim();
-  }
+  document.getElementById('sourceLangSelect').addEventListener('change', (e) => {
+    document.getElementById('customSourceLang').style.display = e.target.value === 'custom-src' ? 'block' : 'none';
+  });
 
-  function getModel() {
-    return document.getElementById('modelSelect').value;
-  }
+  function getApiKey() { return document.getElementById('apiKeyInput').value.trim(); }
+  function getModel() { return document.getElementById('modelSelect').value; }
 
-  // ===== MAIN LOGIC =====
+  // ===== MAIN MESSAGE HANDLER =====
   window.onmessage = async (event) => {
     if (!event.data || !event.data.pluginMessage) return;
     const msg = event.data.pluginMessage;
-    console.log('📩 UI nhận message:', msg.type, msg);
 
     if (msg.type === 'LOAD_SETTINGS') {
       if (msg.apiKey) document.getElementById('apiKeyInput').value = msg.apiKey;
       if (msg.prompt) document.getElementById('promptInput').value = msg.prompt;
-      console.log('⚙️ Đã load settings:', msg.model);
-
-      // Fetch model từ API nếu có key
       if (msg.apiKey) {
         const savedModel = msg.model || 'gemini-2.5-flash';
         fetchModels(msg.apiKey).then(() => {
           const selectEl = document.getElementById('modelSelect');
-          if ([...selectEl.options].some(o => o.value === savedModel)) {
-            selectEl.value = savedModel;
-          }
+          if ([...selectEl.options].some(o => o.value === savedModel)) selectEl.value = savedModel;
         });
-      } else {
-        if (msg.model) document.getElementById('modelSelect').value = msg.model;
-      }
+      } else { if (msg.model) document.getElementById('modelSelect').value = msg.model; }
       return;
     }
 
-    // Plugin báo lỗi
-    if (msg.type === 'TRANSLATE_ERROR') {
+    if (msg.type === 'SELECTION_CHANGED') {
+      const el = document.getElementById('selectionInfo');
+      if (msg.unsupported) { el.innerHTML = `⚠️ "${msg.name}" (${msg.nodeType}) — chọn Frame hoặc Section để dịch`; el.style.background = '#fff3e0'; el.style.color = '#E65100'; }
+      else if (msg.name) { el.innerHTML = `📌 <b>${msg.name}</b> (${msg.nodeType || 'cached'})`; el.style.background = '#e8f5e9'; el.style.color = '#2E7D32'; }
+      else if (msg.cachedName) { el.innerHTML = `📌 Frame đã chọn trước đó (cached)`; el.style.background = '#e3f2fd'; el.style.color = '#1565C0'; }
+      return;
+    }
+
+    if (msg.type === 'TRANSLATE_ERROR' && !batchInProgress) {
+      // In batch mode, waitForMessage handles this via rejection
       const statusEl = document.getElementById('status');
       statusEl.innerText = '❌ ' + (msg.error || 'Lỗi không xác định từ plugin');
-      statusEl.style.color = 'var(--danger-text)';
+      statusEl.style.color = '#E53935';
+      addLog('Error: ' + (msg.error || 'Unknown'), 'error');
       setTranslating(false);
       return;
     }
 
-    // Plugin báo dịch xong
-    if (msg.type === 'TRANSLATION_DONE') {
+    // Single-language: translation done + overflow
+    if (msg.type === 'TRANSLATION_DONE' && !batchInProgress) {
       const statusEl = document.getElementById('status');
       const langName = msg.langName || '';
 
       statusEl.innerText = `🎉 Hoàn tất! ${msg.translatedCount} text đã dịch sang ${langName}, ${msg.skippedCount} bỏ qua.`;
-      statusEl.style.color = 'var(--success-text)';
+      statusEl.style.color = '#4CAF50';
+      addLog(`Translation applied: ${msg.translatedCount} translated, ${msg.skippedCount} skipped`, 'success');
 
+      if (msg.cloneId) {
+        addLog('Running overflow detection...');
+        parent.postMessage({ pluginMessage: { type: 'DETECT_OVERFLOW', frameId: msg.cloneId } }, '*');
+        try {
+          const overflowMsg = await waitForMessage('OVERFLOW_RESULT', 30000);
+          if (overflowMsg.overflows.length > 0) {
+            addLog(`Found ${overflowMsg.overflows.length} overflow(s)`, 'warn');
+            const langCode = getSelectedLang();
+            const langFullName = LANG_NAMES[langCode] || langCode.toUpperCase();
+            await runPass2(msg.cloneId, langCode, langFullName, overflowMsg.overflows);
+
+            parent.postMessage({ pluginMessage: { type: 'DETECT_OVERFLOW', frameId: msg.cloneId } }, '*');
+            const recheck = await waitForMessage('OVERFLOW_RESULT', 30000);
+            allOverflows['single'] = recheck.overflows;
+            if (recheck.overflows.length > 0) {
+              showOverflowPanel();
+              statusEl.innerText += ` ⚠️ ${recheck.overflows.length} overflow(s) remaining.`;
+              addLog(`${recheck.overflows.length} overflow(s) remaining after pass 2`, 'warn');
+            } else {
+              addLog('All overflows resolved after pass 2', 'success');
+            }
+          } else {
+            addLog('No overflow detected', 'success');
+          }
+        } catch (e) { addLog('Overflow detection error: ' + e.message, 'error'); }
+      }
+
+      endLogGroup();
       setTranslating(false);
       return;
     }
 
-    if (msg.type === 'START_TRANSLATE') {
+    if (msg.type === 'START_TRANSLATE' && !batchInProgress) {
       const statusEl = document.getElementById('status');
       const langCode = msg.langCode;
       const langName = LANG_NAMES[langCode] || langCode.toUpperCase();
       const apiKey = getApiKey();
-      const model = getModel();
 
-      // Chỉ check rỗng — KHÔNG check format
-      if (!apiKey) {
-        statusEl.innerText = '❌ Chưa nhập API Key! Lấy tại aistudio.google.com';
-        statusEl.style.color = 'var(--danger-text)';
-        return;
-      }
+      if (!apiKey) { statusEl.innerText = '❌ Chưa nhập API Key!'; statusEl.style.color = '#E53935'; return; }
 
       setTranslating(true);
-      statusEl.innerText = `⏳ Đang dịch sang ${langName} (${model})...`;
+      allOverflows = {};
+      resetTokens();
+      startLogGroup(`Single: ${langName}`);
+      addLog(`Translating ${msg.texts.length} texts to ${langName}...`);
+      statusEl.innerText = `⏳ Đang dịch sang ${langName}...`;
       statusEl.style.color = '#0D99FF';
 
-      // Lấy prompt template từ textarea và thay biến
-      const promptTemplate = document.getElementById('promptInput').value;
-      const layoutProtect = document.getElementById('layoutProtect').checked;
-
-      // Nếu bật layout protect → gửi kèm maxLen cho mỗi text
-      let textListStr;
-      if (layoutProtect) {
-        const textsWithLimits = msg.texts.map(t => ({
-          text: t,
-          maxLen: Math.max(t.length + 3, Math.round(t.length * 1.3))
-        }));
-        textListStr = JSON.stringify(textsWithLimits);
-      } else {
-        textListStr = JSON.stringify(msg.texts);
-      }
-
-      const prompt = promptTemplate
-        .replace(/{{LANG_NAME}}/g, langName)
-        .replace(/{{LANG_CODE}}/g, langCode)
-        .replace(/{{TEXT_LIST}}/g, textListStr);
-
       try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: "application/json" }
-          })
-        });
+        const translatedDict = await callGeminiAPI(msg.texts, langCode, langName);
+        statusEl.innerText = `✅ Dịch xong ${langName}! Đang gắn vào Figma...`;
+        statusEl.style.color = '#4CAF50';
+        addLog('Applying translation to Figma clone...');
+        parent.postMessage({ pluginMessage: { type: 'APPLY_TRANSLATION', translatedDict, langCode, langName, gap: getGridGapV() } }, '*');
 
-        const data = await response.json();
-
-        // Xử lý lỗi API chi tiết
-        if (!response.ok || data.error) {
-          const errorMsg = handleApiError(response, data);
-          statusEl.innerText = errorMsg;
-          statusEl.style.color = 'var(--danger-text)';
-          setTranslating(false);
-          return;
-        }
-
-        if (!data.candidates || !data.candidates.length) {
-          if (data.promptFeedback?.blockReason) {
-            statusEl.innerText = `🛡️ Bị chặn: ${data.promptFeedback.blockReason}`;
-          } else {
-            statusEl.innerText = '❌ AI không trả về kết quả — thử lại hoặc đổi model';
-          }
-          statusEl.style.color = 'var(--danger-text)';
-          setTranslating(false);
-          return;
-        }
-
-        const jsonString = data.candidates[0]?.content?.parts?.[0]?.text;
-        if (!jsonString) {
-          statusEl.innerText = '❌ AI trả về rỗng — thử lại';
-          statusEl.style.color = 'var(--danger-text)';
-          setTranslating(false);
-          return;
-        }
-
-        let translatedDict;
-        try {
-          translatedDict = JSON.parse(jsonString);
-        } catch (parseErr) {
-          statusEl.innerText = '❌ AI trả về JSON không hợp lệ — thử lại hoặc đổi model';
-          statusEl.style.color = 'var(--danger-text)';
-          console.error('JSON parse error:', jsonString);
-          setTranslating(false);
-          return;
-        }
-
-        // ============================================
-        // === KIỂM TRA ĐỘ DÀI TRƯỚC KHI GỬI FIGMA ===
-        // ============================================
-
-        if (layoutProtect) {
-          const MAX_RATIO = 1.3; // Không được dài hơn 30%
-
-          // Tìm text dài quá
-          const tooLong = [];
-          for (const [original, translated] of Object.entries(translatedDict)) {
-            if (typeof translated !== 'string') continue;
-            if (translated.length > original.length * MAX_RATIO && original.length > 3) {
-              tooLong.push({ original, translated, maxChars: original.length + 3 });
-            }
-          }
-
-          // Nếu có text dài → gọi AI dịch lại 1 lần với maxLen cụ thể
-          if (tooLong.length > 0) {
-            statusEl.innerText = `🔄 ${tooLong.length} text quá dài — đang dịch ngắn hơn...`;
-            statusEl.style.color = 'var(--warning-text)';
-
-            const fixPrompt = `Dịch lại các text UI sau sang ${langName}. QUAN TRỌNG: mỗi bản dịch PHẢI ngắn hơn hoặc bằng số ký tự tối đa được chỉ định.
-
-${tooLong.map((t, i) => `${i + 1}. "${t.original}" → tối đa ${t.maxChars} ký tự (dịch cũ "${t.translated}" dài ${t.translated.length} ký tự, QUÁ DÀI)`).join('\n')}
-
-Trả về JSON object, key = text gốc, value = bản dịch mới NGẮN HƠN.`;
-
-            try {
-              const fixResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  contents: [{ parts: [{ text: fixPrompt }] }],
-                  generationConfig: { responseMimeType: "application/json" }
-                })
-              });
-              const fixData = await fixResp.json();
-              const fixJson = fixData?.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (fixJson) {
-                const fixDict = JSON.parse(fixJson);
-                let fixedCount = 0;
-                for (const key in fixDict) {
-                  if (translatedDict[key] && typeof fixDict[key] === 'string' && fixDict[key].length < translatedDict[key].length) {
-                    translatedDict[key] = fixDict[key];
-                    fixedCount++;
-                  }
-                }
-                statusEl.innerText = `✅ Đã rút ngắn ${fixedCount}/${tooLong.length} text. Đang gắn vào Figma...`;
-              }
-            } catch (e) {
-              // Lỗi → dùng bản dịch hiện tại
-            }
-          } else {
-            statusEl.innerText = `✅ Dịch xong ${langName}! Tất cả text vừa vặn. Đang gắn vào Figma...`;
-          }
-        } else {
-          statusEl.innerText = `✅ Dịch xong ${langName}! Đang gắn vào Figma...`;
-        }
-
-        statusEl.style.color = 'var(--success-text)';
-        parent.postMessage({ pluginMessage: { type: 'APPLY_TRANSLATION', translatedDict, langCode, langName } }, '*');
-
-        // Safety timeout
-        setTimeout(() => {
-          if (_isTranslating) {
-            setTranslating(false);
-          }
-        }, 20000);
-
+        setTimeout(() => { if (_isTranslating) setTranslating(false); }, 20000);
       } catch (error) {
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-          statusEl.innerText = '🌐 Không có kết nối mạng';
-        } else {
-          statusEl.innerText = '❌ Lỗi: ' + error.message;
-        }
-        statusEl.style.color = 'var(--danger-text)';
+        statusEl.innerText = error.name === 'TypeError' && error.message.includes('fetch') ? '🌐 Không có kết nối mạng' : '❌ Lỗi: ' + error.message;
+        statusEl.style.color = '#E53935';
+        addLog('Translation failed: ' + error.message, 'error');
+        endLogGroup();
         setTranslating(false);
       }
     }
   };
 
-  // ===== CLICK TO NAVIGATE =====
-  window.selectNode = function(nodeId) {
-    parent.postMessage({ pluginMessage: { type: 'SELECT_NODE', nodeId } }, '*');
-  };
-
+  // ===== TRANSLATE BUTTON =====
   document.getElementById('translateBtn').onclick = () => {
-    if (_isTranslating) return;
-    const langCode = getSelectedLang();
-    const langName = LANG_NAMES[langCode] || langCode.toUpperCase();
-    parent.postMessage({ pluginMessage: { type: 'EXTRACT_TEXT', langCode, langName } }, '*');
+    if (_isTranslating || batchInProgress) return;
+    if (langMode === 'batch') {
+      const langs = getSelectedBatchLangs();
+      if (langs.length === 0) return;
+      runBatch(langs);
+    } else {
+      const langCode = getSelectedLang();
+      const langName = LANG_NAMES[langCode] || langCode.toUpperCase();
+      parent.postMessage({ pluginMessage: { type: 'EXTRACT_TEXT', langCode, langName } }, '*');
+    }
   };
 
-  // ===== FIGMA PLUGIN FOCUS WORKAROUND =====
+  // ===== FOCUS WORKAROUND =====
   document.querySelectorAll('input, textarea, select').forEach(el => {
     el.addEventListener('focus', () => window.focus());
-    el.addEventListener('click', () => {
-      window.focus();
-      el.focus();
-    });
+    el.addEventListener('click', () => { window.focus(); el.focus(); });
   });
 </script>
