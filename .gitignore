@@ -7,5 +7,4 @@ package-lock.json
 # Build output
 out/
 dist/
-code.js
 .agent/
