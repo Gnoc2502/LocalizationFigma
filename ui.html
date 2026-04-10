@@ -865,7 +865,7 @@ ${charLimits}
       hintEl.style.color = '#4CAF50';
     } catch (err) {
       hintEl.innerText = '❌ Lỗi tải model: ' + err.message;
-      hintEl.style.color = '#E53935';
+      hintEl.style.color = 'var(--danger-text)';
     } finally {
       refreshBtn.disabled = false;
       refreshBtn.innerText = '🔄 Tải model';
@@ -1021,6 +1021,7 @@ Ví dụ: {"Settings": "Cài đặt", "Delete": "Xoá"}`;
     if (msg.type === 'TRANSLATION_DONE' && !batchInProgress) {
       const statusEl = document.getElementById('status');
       const langName = msg.langName || '';
+
       statusEl.innerText = `🎉 Hoàn tất! ${msg.translatedCount} text đã dịch sang ${langName}, ${msg.skippedCount} bỏ qua.`;
       statusEl.style.color = '#4CAF50';
       addLog(`Translation applied: ${msg.translatedCount} translated, ${msg.skippedCount} skipped`, 'success');

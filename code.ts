@@ -80,6 +80,21 @@ figma.ui.onmessage = async (msg) => {
     return;
   }
 
+  // ===== CLICK TO NAVIGATE =====
+  if (msg.type === 'SELECT_NODE') {
+    const node = await figma.getNodeByIdAsync(msg.nodeId);
+    if (node && 'type' in node) {
+      const sceneNode = node as SceneNode;
+      figma.currentPage.selection = [sceneNode];
+      figma.viewport.scrollAndZoomIntoView([sceneNode]);
+      figma.notify(`📍 Đã chọn: ${sceneNode.name}`);
+    } else {
+      figma.notify('⚠️ Không tìm thấy node', { error: true });
+    }
+    return;
+  }
+
+  // ===== TRÍCH XUẤT TEXT =====
   if (msg.type === 'EXTRACT_TEXT') {
     const selectedNode = await getSelectedFrame();
     if (!selectedNode) {
@@ -97,6 +112,7 @@ figma.ui.onmessage = async (msg) => {
     figma.ui.postMessage({ type: 'START_TRANSLATE', texts: textsToTranslate, langCode: msg.langCode, langName: msg.langName });
   }
 
+  // ===== APPLY TRANSLATION (text đã kiểm tra xong từ UI) =====
   if (msg.type === 'APPLY_TRANSLATION') {
     // Use explicit sourceFrameId if provided (batch mode), otherwise fall back to selection
     let originalFrame: FrameNode | null = null;
@@ -121,49 +137,33 @@ figma.ui.onmessage = async (msg) => {
       clonedFrame.y = originalFrame.y + originalFrame.height + gap;
     }
 
-    // Đặt tên theo ngôn ngữ thực tế
     const langLabel = msg.langName || msg.langCode || 'Translated';
     clonedFrame.name = originalFrame.name + ` (${langLabel})`;
 
-    // Hàm normalize text để so sánh chính xác hơn
     const normalize = (s: string) => s.replace(/\s+/g, ' ').trim();
 
-    // Tạo bản dict đã normalize key để matching dễ hơn
     const normalizedDict: Record<string, string> = {};
     for (const key in msg.translatedDict) {
       normalizedDict[normalize(key)] = msg.translatedDict[key];
     }
-    console.log('📖 Dict sau khi normalize:', JSON.stringify(normalizedDict));
+
+    const clonedTextNodes = clonedFrame.findAllWithCriteria({ types: ['TEXT'] });
+    await batchLoadFonts(clonedTextNodes);
 
     let translatedCount = 0;
     let skippedCount = 0;
-
-    // Quét text trên bản sao
-    const clonedTextNodes = clonedFrame.findAllWithCriteria({ types: ['TEXT'] });
 
     for (const node of clonedTextNodes) {
       const originalText = normalize(node.characters);
       const translated = normalizedDict[originalText];
 
-      if (translated) {
-        if (node.fontName !== figma.mixed) {
-          await figma.loadFontAsync(node.fontName as FontName);
-          node.characters = translated;
-          translatedCount++;
-        } else {
-          // Mixed font: load từng ký tự font rồi replace
-          const len = node.characters.length;
-          for (let i = 0; i < len; i++) {
-            const font = node.getRangeFontName(i, i + 1) as FontName;
-            await figma.loadFontAsync(font);
-          }
-          node.characters = translated;
-          translatedCount++;
-        }
-      } else {
-        console.log('⏭️ Không tìm thấy bản dịch cho:', originalText);
+      if (!translated) {
         skippedCount++;
+        continue;
       }
+
+      node.characters = translated;
+      translatedCount++;
     }
 
     // In batch mode (sourceFrameId provided), don't change selection to avoid
@@ -174,7 +174,7 @@ figma.ui.onmessage = async (msg) => {
     }
     figma.notify(`🎉 Dịch xong! ${translatedCount} text đã dịch, ${skippedCount} text bỏ qua.`);
 
-    // Gửi message về UI báo hoàn tất
+    figma.notify(`🎉 Dịch xong! ${translatedCount} text, ${skippedCount} bỏ qua.`);
     figma.ui.postMessage({
       type: 'TRANSLATION_DONE',
       translatedCount,
